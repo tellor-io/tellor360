@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
-//need transition 
 
 contract Tellor360 is Token{
 
@@ -12,12 +11,37 @@ contract Tellor360 is Token{
     }
 
 
+    /**
+     * @dev Changes Governance contract to a new address
+     * Note: this function is only callable by the Governance contract.
+     * @param _newGovernance is the address of the new Governance contract
+     */
+    function changeGovernanceContract(address _newGovernance) external {
+        require(
+            msg.sender == addresses[_GOVERNANCE_CONTRACT],
+            "Only the Governance contract can change the Governance contract address"
+        );
+        require(_isValid(_newGovernance));
+        addresses[_GOVERNANCE_CONTRACT] = _newGovernance;
+        emit NewContractAddress(_newGovernance, "Governance");
+    }
+    
+    /**
+     * @dev Use this function to withdraw released tokens
+     *
+     */
     function mintToTeam(){
-
+        //yearly is 4k * 12 mos = 48k per year (131.5 per day)
+        uint256 _releasedAmount = 131.5 ether * (block.timestamp - lastReleaseTime)/(86400); 
+        lastReleaseTime = block.timestamp;
+        mint(owner, _releasedAmount);
     }
 
     function mintToDAO{
-
+        //yearly is 4k * 12 mos = 48k per year (131.5 per day)
+        uint256 _releasedAmount = 131.5 ether * (block.timestamp - lastReleaseTime)/(86400); 
+        lastReleaseTime = block.timestamp;
+        mint(addresses[_GOVERNANCE_ADDRESS], _releasedAmount);
     }
 
     /**
