@@ -1,18 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
-//need transition and token functions and autoMinting functions
+//need transition 
 
 contract Tellor360 is Token{
 
 
 
     constructor(address _flexAddress) {
-
+        //mint a few people some tokens (those locked)
     }
 
 
-    
+    function mintToTeam(){
+
+    }
+
+    function mintToDAO{
+
+    }
 
     /**
      * @dev Used during the upgrade process to verify valid Tellor Contracts and ensure

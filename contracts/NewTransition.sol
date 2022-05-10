@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
-import "./tellor3/TellorStorage.sol";
-import "./TellorVars.sol";
-import "./interfaces/IOracle.sol";
-import "./interfaces/IController.sol";
+import "./oldContracts/tellor3/TellorStorage.sol";
+import "./oldContracts/TellorVars.sol";
+import "./oldContracts/interfaces/IOracle.sol";
+import "./oldContracts/interfaces/IController.sol";
 
 /**
  @author Tellor Inc.
@@ -14,7 +14,7 @@ import "./interfaces/IController.sol";
 * address to access values. All parties should be reading values
 * through this address
 */
-contract Transition is TellorStorage, TellorVars {
+contract NewTransition is TellorStorage, TellorVars {
     // Functions
     /**
      * @dev Runs once Tellor is migrated over. Changes the underlying storage.

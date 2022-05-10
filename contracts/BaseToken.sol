@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
-import "./tellor3/TellorStorage.sol";
-import "./TellorVars.sol";
-import "./interfaces/IGovernance.sol";
+import "./oldContracts/tellor3/TellorStorage.sol";
+import "./oldContracts/TellorVars.sol";
 
 /**
  @author Tellor Inc.
@@ -173,10 +172,6 @@ contract BaseToken is TellorStorage, TellorVars {
         // Ensure user has a correct balance and to address
         require(_amount != 0, "Tried to send non-positive amount");
         require(_to != address(0), "Receiver is 0 address");
-        require(
-            allowedToTrade(_from, _amount),
-            "Should have sufficient balance to trade"
-        );
         // Update balance of _from address
         uint128 _previousBalance = uint128(balanceOf(_from));
         uint128 _sizedAmount = uint128(_amount);
