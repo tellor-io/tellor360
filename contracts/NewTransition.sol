@@ -4,7 +4,6 @@ pragma solidity 0.8.3;
 import "./oldContracts/tellor3/TellorStorage.sol";
 import "./oldContracts/TellorVars.sol";
 import "./oldContracts/interfaces/IOracle.sol";
-import "./oldContracts/interfaces/IController.sol";
 
 /**
  @author Tellor Inc.
@@ -16,29 +15,6 @@ import "./oldContracts/interfaces/IController.sol";
 */
 contract NewTransition is TellorStorage, TellorVars {
     // Functions
-    /**
-     * @dev Runs once Tellor is migrated over. Changes the underlying storage.
-     */
-    function init() external {
-        require(
-            addresses[_GOVERNANCE_CONTRACT] == address(0),
-            "Only good once"
-        );
-        // give a few peeps some tokens back (locked in contract, lost, etc.)
-        IController(TELLOR_ADDRESS).mint(
-            addresses[_ORACLE_CONTRACT],
-            105120e18
-        );
-        IController(TELLOR_ADDRESS).mint(
-            0xAa304E98f47D4a6a421F3B1cC12581511dD69C55,
-            105120e18
-        );
-        IController(TELLOR_ADDRESS).mint(
-            0x83eB2094072f6eD9F57d3F19f54820ee0BaE6084,
-            18201e18
-        );
-    }
-
     //Getters
     /**
      * @dev Allows users to access the number of decimals
@@ -161,7 +137,7 @@ contract NewTransition is TellorStorage, TellorVars {
     {
         // Try the new contract first
         uint256 _timeCount = IOracle(addresses[_ORACLE_CONTRACT])
-            .getTimestampCountById(bytes32(_requestId));
+            .getNewValueCounttByQueryId(bytes32(_requestId));
         if (_timeCount != 0) {
             // If timestamps for the ID exist, there is value, so return the value
             return (
@@ -229,7 +205,7 @@ contract NewTransition is TellorStorage, TellorVars {
     {
         // Defaults to new one, but will give old value if new mining has not started
         uint256 _val = IOracle(addresses[_ORACLE_CONTRACT])
-            .getTimestampCountById(bytes32(_requestId));
+            .getNewValueCountByQueryId(bytes32(_requestId));
         if (_val > 0) {
             return _val;
         } else {
