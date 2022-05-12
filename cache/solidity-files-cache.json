@@ -1,0 +1,1495 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/BaseToken.sol": {
+      "lastModificationDate": 1652362185437,
+      "contentHash": "894e75e441a10d3fa57cbff941a6169a",
+      "sourceName": "contracts/BaseToken.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./oldContracts/contracts/tellor3/TellorStorage.sol",
+        "./oldContracts/contracts/TellorVars.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "BaseToken"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/tellor3/TellorStorage.sol": {
+      "lastModificationDate": 1651843723949,
+      "contentHash": "5fe436c9f4e6e91a8295b3f4262dacd1",
+      "sourceName": "contracts/oldContracts/contracts/tellor3/TellorStorage.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.7.4"
+      ],
+      "artifacts": [
+        "TellorStorage"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/TellorVars.sol": {
+      "lastModificationDate": 1651843723912,
+      "contentHash": "bb6f0c59b1b5b89dc73fa81161a7ad86",
+      "sourceName": "contracts/oldContracts/contracts/TellorVars.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./tellor3/TellorVariables.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "TellorVars"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/tellor3/TellorVariables.sol": {
+      "lastModificationDate": 1651843723953,
+      "contentHash": "c869da292c85aa4bedac5de9f858bf10",
+      "sourceName": "contracts/oldContracts/contracts/tellor3/TellorVariables.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.7.4"
+      ],
+      "artifacts": [
+        "TellorVariables"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/Tellor360.sol": {
+      "lastModificationDate": 1652363099439,
+      "contentHash": "8440210258061e28ac8f259e1a8f5326",
+      "sourceName": "contracts/Tellor360.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./BaseToken.sol",
+        "./NewTransition.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "Tellor360"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/NewTransition.sol": {
+      "lastModificationDate": 1652362768223,
+      "contentHash": "e990c866df132f128e6e7e252c4e7f6c",
+      "sourceName": "contracts/NewTransition.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./oldContracts/contracts/tellor3/TellorStorage.sol",
+        "./oldContracts/contracts/TellorVars.sol",
+        "./oldContracts/contracts/interfaces/IOracle.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "NewTransition"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/interfaces/IOracle.sol": {
+      "lastModificationDate": 1652362842175,
+      "contentHash": "898c4d1d9e9a3b867be9c1b3c4a338b4",
+      "sourceName": "contracts/oldContracts/contracts/interfaces/IOracle.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "IOracle"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/Governance.sol": {
+      "lastModificationDate": 1651843723905,
+      "contentHash": "ed7b4b5f8511a1fc6df2375aa181d9f6",
+      "sourceName": "contracts/oldContracts/contracts/Governance.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./TellorVars.sol",
+        "./interfaces/IOracle.sol",
+        "./interfaces/IController.sol",
+        "./interfaces/ITreasury.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "Governance"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/interfaces/IController.sol": {
+      "lastModificationDate": 1651843723921,
+      "contentHash": "00aeb688350762a34a13da186b0d78d6",
+      "sourceName": "contracts/oldContracts/contracts/interfaces/IController.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "IController"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/interfaces/ITreasury.sol": {
+      "lastModificationDate": 1651843723926,
+      "contentHash": "72bbfde6bf558ecf25b42603f8e0d344",
+      "sourceName": "contracts/oldContracts/contracts/interfaces/ITreasury.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "ITreasury"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/testing/TestGovernance.sol": {
+      "lastModificationDate": 1651843723973,
+      "contentHash": "d88795b2c4d8a657caad8598290a8a8f",
+      "sourceName": "contracts/oldContracts/contracts/testing/TestGovernance.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../Governance.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "TestGovernance"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/Treasury.sol": {
+      "lastModificationDate": 1651843723917,
+      "contentHash": "4ba0b97058af64f932d94e009440d81e",
+      "sourceName": "contracts/oldContracts/contracts/Treasury.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./interfaces/IController.sol",
+        "./TellorVars.sol",
+        "./interfaces/IGovernance.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "Treasury"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/interfaces/IGovernance.sol": {
+      "lastModificationDate": 1651843723922,
+      "contentHash": "38cf9c429ad2663cd1f452dda5e27de3",
+      "sourceName": "contracts/oldContracts/contracts/interfaces/IGovernance.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "IGovernance"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/Token.sol": {
+      "lastModificationDate": 1651843723914,
+      "contentHash": "8dd8541e2e6cf211abc90e0fcd820bda",
+      "sourceName": "contracts/oldContracts/contracts/Token.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./tellor3/TellorStorage.sol",
+        "./TellorVars.sol",
+        "./interfaces/IGovernance.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "Token"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/testing/TestToken.sol": {
+      "lastModificationDate": 1651843723980,
+      "contentHash": "d3f6aad88c40c9189078310bd8271058",
+      "sourceName": "contracts/oldContracts/contracts/testing/TestToken.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../Token.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "TestToken"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/Oracle.sol": {
+      "lastModificationDate": 1651843723909,
+      "contentHash": "6fdce09dc8451d784f410bc9f6f76edc",
+      "sourceName": "contracts/oldContracts/contracts/Oracle.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./interfaces/IController.sol",
+        "./TellorVars.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "Oracle"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/Getters.sol": {
+      "lastModificationDate": 1651843723898,
+      "contentHash": "fd120f4e0a647c51632289db238aa3e7",
+      "sourceName": "contracts/oldContracts/contracts/Getters.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./tellor3/TellorStorage.sol",
+        "./TellorVars.sol",
+        "./interfaces/IOracle.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "Getters"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/tellor3/ITellor.sol": {
+      "lastModificationDate": 1651843723931,
+      "contentHash": "2eb080755aa81fcee83f69e5d700627b",
+      "sourceName": "contracts/oldContracts/contracts/tellor3/ITellor.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.7.4"
+      ],
+      "artifacts": [
+        "ITellor"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/Transition.sol": {
+      "lastModificationDate": 1651843723915,
+      "contentHash": "29d80dfc3f10b7cdd50964a32a7f274d",
+      "sourceName": "contracts/oldContracts/contracts/Transition.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./tellor3/TellorStorage.sol",
+        "./TellorVars.sol",
+        "./interfaces/IOracle.sol",
+        "./interfaces/IController.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "Transition"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/Controller.sol": {
+      "lastModificationDate": 1651843723896,
+      "contentHash": "6ecb4f63a14e3bcecdae3052855db7bd",
+      "sourceName": "contracts/oldContracts/contracts/Controller.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./TellorStaking.sol",
+        "./interfaces/IController.sol",
+        "./Transition.sol",
+        "./Getters.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "Controller"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/TellorStaking.sol": {
+      "lastModificationDate": 1651843723910,
+      "contentHash": "b46d67849a71d2ae479bb73fca688647",
+      "sourceName": "contracts/oldContracts/contracts/TellorStaking.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./Token.sol",
+        "./interfaces/IGovernance.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "TellorStaking"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/testing/TestController.sol": {
+      "lastModificationDate": 1651843723971,
+      "contentHash": "996eb2fa0b9d60a4c286124cca492f70",
+      "sourceName": "contracts/oldContracts/contracts/testing/TestController.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../Controller.sol",
+        "hardhat/console.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "TestController"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/node_modules/hardhat/console.sol": {
+      "lastModificationDate": 1652294250692,
+      "contentHash": "cc4777addd464ea56fa35b1c45df0591",
+      "sourceName": "hardhat/console.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.4.22 <0.9.0"
+      ],
+      "artifacts": [
+        "console"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/interfaces/ITellor.sol": {
+      "lastModificationDate": 1651843723925,
+      "contentHash": "5627d22126f9b419f9791617f0355ab2",
+      "sourceName": "contracts/oldContracts/contracts/interfaces/ITellor.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "ITellor"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/testing/ForceSendEther.sol": {
+      "lastModificationDate": 1651843723958,
+      "contentHash": "2e1b2a64ed325ac550e483a7de627a64",
+      "sourceName": "contracts/oldContracts/contracts/testing/ForceSendEther.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "ForceSendEther"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/testing/IPriceFeed.sol": {
+      "lastModificationDate": 1651843723962,
+      "contentHash": "125f971e33de188bf4a50b2bf4644d2d",
+      "sourceName": "contracts/oldContracts/contracts/testing/IPriceFeed.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "IPriceFeed"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/testing/IsUsingTellor.sol": {
+      "lastModificationDate": 1651843723964,
+      "contentHash": "0299d7c39c5ad60015b3a99d1176fdb3",
+      "sourceName": "contracts/oldContracts/contracts/testing/IsUsingTellor.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./UsingTellor.sol"
+      ],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "IsUsingTellor"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/testing/UsingTellor.sol": {
+      "lastModificationDate": 1651843723983,
+      "contentHash": "56c5d8e134c0a8708d1b6d2a250b7b01",
+      "sourceName": "contracts/oldContracts/contracts/testing/UsingTellor.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "ITellor",
+        "UsingTellor"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/testing/MedianOracle.sol": {
+      "lastModificationDate": 1651843723966,
+      "contentHash": "f657ae6ab516eaed0ac686f7e6675650",
+      "sourceName": "contracts/oldContracts/contracts/testing/MedianOracle.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "MedianOracle"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/testing/TellorProvider.sol": {
+      "lastModificationDate": 1651843723969,
+      "contentHash": "9684233e424bd92b10f418eb1f047498",
+      "sourceName": "contracts/oldContracts/contracts/testing/TellorProvider.sol",
+      "solcConfig": {
+        "version": "0.8.3",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.8.3"
+      ],
+      "artifacts": [
+        "IMedianOracle",
+        "ITellorGetters",
+        "TellorProvider"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/tellor3/TellorMaster.sol": {
+      "lastModificationDate": 1651843723946,
+      "contentHash": "b9c75cdd2cdd5a43bdade7f2f8012047",
+      "sourceName": "contracts/oldContracts/contracts/tellor3/TellorMaster.sol",
+      "solcConfig": {
+        "version": "0.7.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./TellorStorage.sol",
+        "./TellorVariables.sol"
+      ],
+      "versionPragmas": [
+        "0.7.4"
+      ],
+      "artifacts": [
+        "TellorMaster"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/tellor3/TellorTransfer.sol": {
+      "lastModificationDate": 1651843723951,
+      "contentHash": "6aea1444c33bcc10c2a49261d677e574",
+      "sourceName": "contracts/oldContracts/contracts/tellor3/TellorTransfer.sol",
+      "solcConfig": {
+        "version": "0.7.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./SafeMath.sol",
+        "./TellorStorage.sol",
+        "./TellorVariables.sol"
+      ],
+      "versionPragmas": [
+        "0.7.4"
+      ],
+      "artifacts": [
+        "TellorTransfer"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/tellor3/SafeMath.sol": {
+      "lastModificationDate": 1651843723940,
+      "contentHash": "9f3c86496405c12c49e21f6cdc20b72c",
+      "sourceName": "contracts/oldContracts/contracts/tellor3/SafeMath.sol",
+      "solcConfig": {
+        "version": "0.7.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.7.4"
+      ],
+      "artifacts": [
+        "SafeMath"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/tellor3/Tellor.sol": {
+      "lastModificationDate": 1651843723942,
+      "contentHash": "f533c80c4c2ef53658bb4815131b55e8",
+      "sourceName": "contracts/oldContracts/contracts/tellor3/Tellor.sol",
+      "solcConfig": {
+        "version": "0.7.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./TellorStake.sol",
+        "./TellorGetters.sol",
+        "./Utilities.sol",
+        "./ITellor.sol",
+        "./SafeMath.sol"
+      ],
+      "versionPragmas": [
+        "0.7.4"
+      ],
+      "artifacts": [
+        "Tellor"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/tellor3/TellorStake.sol": {
+      "lastModificationDate": 1651843723948,
+      "contentHash": "2c74ea3a06de0994f4fec6f2ead4f555",
+      "sourceName": "contracts/oldContracts/contracts/tellor3/TellorStake.sol",
+      "solcConfig": {
+        "version": "0.7.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./TellorTransfer.sol",
+        "./TellorGetters.sol",
+        "./Extension.sol",
+        "./Utilities.sol"
+      ],
+      "versionPragmas": [
+        "0.7.4"
+      ],
+      "artifacts": [
+        "TellorStake"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/tellor3/TellorGetters.sol": {
+      "lastModificationDate": 1651843723944,
+      "contentHash": "6e5334d061ef3e9f21836907ed125260",
+      "sourceName": "contracts/oldContracts/contracts/tellor3/TellorGetters.sol",
+      "solcConfig": {
+        "version": "0.7.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./SafeMath.sol",
+        "./TellorStorage.sol",
+        "./TellorVariables.sol",
+        "./Utilities.sol"
+      ],
+      "versionPragmas": [
+        "0.7.4"
+      ],
+      "artifacts": [
+        "TellorGetters"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/tellor3/Utilities.sol": {
+      "lastModificationDate": 1651843723955,
+      "contentHash": "bda19c236a87c33dc7ed3a9d32da84cc",
+      "sourceName": "contracts/oldContracts/contracts/tellor3/Utilities.sol",
+      "solcConfig": {
+        "version": "0.7.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "0.7.4"
+      ],
+      "artifacts": [
+        "Utilities"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/tellor3/Extension.sol": {
+      "lastModificationDate": 1651843723930,
+      "contentHash": "f8ab0ef35489885f4ef40e04643dd203",
+      "sourceName": "contracts/oldContracts/contracts/tellor3/Extension.sol",
+      "solcConfig": {
+        "version": "0.7.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./SafeMath.sol",
+        "./TellorGetters.sol",
+        "./TellorVariables.sol",
+        "./Utilities.sol"
+      ],
+      "versionPragmas": [
+        ">=0.7.4"
+      ],
+      "artifacts": [
+        "Extension"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/tellor3/Mocks/UtilitiesTest.sol": {
+      "lastModificationDate": 1651843723938,
+      "contentHash": "bc23ed9bf23ca013f48adbade0ea5eb9",
+      "sourceName": "contracts/oldContracts/contracts/tellor3/Mocks/UtilitiesTest.sol",
+      "solcConfig": {
+        "version": "0.7.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../Utilities.sol",
+        "../Tellor.sol"
+      ],
+      "versionPragmas": [
+        "0.7.4"
+      ],
+      "artifacts": [
+        "UtilitiesTest"
+      ]
+    },
+    "/Users/nicholasfett/Company/Code/tellor360/contracts/oldContracts/contracts/tellor3/Mocks/TellorTest.sol": {
+      "lastModificationDate": 1651843723933,
+      "contentHash": "b2b320b02d028059ac2916186d84c5ae",
+      "sourceName": "contracts/oldContracts/contracts/tellor3/Mocks/TellorTest.sol",
+      "solcConfig": {
+        "version": "0.7.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 300
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../Tellor.sol"
+      ],
+      "versionPragmas": [
+        "0.7.4"
+      ],
+      "artifacts": [
+        "TellorTest"
+      ]
+    }
+  }
+}

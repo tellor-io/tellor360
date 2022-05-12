@@ -96,14 +96,6 @@ contract BaseToken is TellorStorage, TellorVars {
     }
 
     /**
-     * @dev Burns an amount of tokens
-     * @param _amount is the amount of tokens to burn
-     */
-    function burn(uint256 _amount) external {
-        _doBurn(msg.sender, _amount);
-    }
-
-    /**
      * @dev Allows for a transfer of tokens to _to
      * @param _to The address to send tokens to
      * @param _amount The amount of tokens to send
@@ -140,6 +132,7 @@ contract BaseToken is TellorStorage, TellorVars {
     }
 
     // Internal
+
     /**
      * @dev Helps mint new TRB
      * @param _to is the address to send minted amount to

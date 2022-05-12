@@ -136,8 +136,7 @@ contract NewTransition is TellorStorage, TellorVars {
         returns (uint256, bool)
     {
         // Try the new contract first
-        uint256 _timeCount = IOracle(addresses[_ORACLE_CONTRACT])
-            .getNewValueCounttByQueryId(bytes32(_requestId));
+        uint256 _timeCount = IOracle(addresses[_ORACLE_CONTRACT]).getNewValueCountbyQueryId(bytes32(_requestId));
         if (_timeCount != 0) {
             // If timestamps for the ID exist, there is value, so return the value
             return (
@@ -205,7 +204,7 @@ contract NewTransition is TellorStorage, TellorVars {
     {
         // Defaults to new one, but will give old value if new mining has not started
         uint256 _val = IOracle(addresses[_ORACLE_CONTRACT])
-            .getNewValueCountByQueryId(bytes32(_requestId));
+            .getNewValueCountbyQueryId(bytes32(_requestId));
         if (_val > 0) {
             return _val;
         } else {
