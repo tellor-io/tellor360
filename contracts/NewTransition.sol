@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
-import "./oldContracts/tellor3/TellorStorage.sol";
-import "./oldContracts/TellorVars.sol";
-import "./oldContracts/interfaces/IOracle.sol";
+import "./oldContracts/contracts/tellor3/TellorStorage.sol";
+import "./oldContracts/contracts/TellorVars.sol";
+import "./oldContracts/contracts/interfaces/IOracle.sol";
 
 /**
  @author Tellor Inc.
@@ -300,45 +300,6 @@ contract NewTransition is TellorStorage, TellorVars {
      */
     function totalSupply() external view returns (uint256) {
         return uints[_TOTAL_SUPPLY];
-    }
-
-    /**
-     * @dev Allows Tellor X to fallback to the old Tellor if there are current open disputes
-     * (or disputes on old Tellor values)
-     */
-    fallback() external {
-        address _addr = 0x2754da26f634E04b26c4deCD27b3eb144Cf40582; // Main Tellor address (Harcode this in?)
-        // Obtain function header from msg.data
-        bytes4 _function;
-        for (uint256 i = 0; i < 4; i++) {
-            _function |= bytes4(msg.data[i] & 0xFF) >> (i * 8);
-        }
-        // Ensure that the function is allowed and related to disputes, voting, and dispute fees
-        require(
-            _function ==
-                bytes4(
-                    bytes32(keccak256("beginDispute(uint256,uint256,uint256)"))
-                ) ||
-                _function == bytes4(bytes32(keccak256("vote(uint256,bool)"))) ||
-                _function ==
-                bytes4(bytes32(keccak256("tallyVotes(uint256)"))) ||
-                _function ==
-                bytes4(bytes32(keccak256("unlockDisputeFee(uint256)"))),
-            "function should be allowed"
-        ); //should autolock out after a week (no disputes can begin past a week)
-        // Calls the function in msg.data from main Tellor address
-        (bool _result, ) = _addr.delegatecall(msg.data);
-        assembly {
-            returndatacopy(0, 0, returndatasize())
-            switch _result
-            // delegatecall returns 0 on error.
-            case 0 {
-                revert(0, returndatasize())
-            }
-            default {
-                return(0, returndatasize())
-            }
-        }
     }
 
     // Internal

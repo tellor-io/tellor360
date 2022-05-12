@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
-import "./oldContracts/tellor3/TellorStorage.sol";
-import "./oldContracts/TellorVars.sol";
+import "./oldContracts/contracts/tellor3/TellorStorage.sol";
+import "./oldContracts/contracts/TellorVars.sol";
 
 /**
  @author Tellor Inc.

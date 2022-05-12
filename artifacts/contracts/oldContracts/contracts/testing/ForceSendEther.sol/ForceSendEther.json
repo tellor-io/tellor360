@@ -1,0 +1,28 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ForceSendEther",
+  "sourceName": "contracts/oldContracts/contracts/testing/ForceSendEther.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address payable",
+          "name": "_beneficiary",
+          "type": "address"
+        }
+      ],
+      "name": "forceSendEther",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "receive"
+    }
+  ],
+  "bytecode": "0x6080604052348015600f57600080fd5b5060a98061001e6000396000f3fe608060405260043610601f5760003560e01c806306c4a68414602a576025565b36602557005b600080fd5b603960353660046047565b603b565b005b806001600160a01b0316ff5b6000602082840312156057578081fd5b81356001600160a01b0381168114606c578182fd5b939250505056fea2646970667358221220c8d247c9531888f7e692621386c7acb106c330b71bb89fdf5de18a87fc2bebe864736f6c63430008030033",
+  "deployedBytecode": "0x608060405260043610601f5760003560e01c806306c4a68414602a576025565b36602557005b600080fd5b603960353660046047565b603b565b005b806001600160a01b0316ff5b6000602082840312156057578081fd5b81356001600160a01b0381168114606c578182fd5b939250505056fea2646970667358221220c8d247c9531888f7e692621386c7acb106c330b71bb89fdf5de18a87fc2bebe864736f6c63430008030033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

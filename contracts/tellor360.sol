@@ -1,13 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
+import "./BaseToken.sol";
 
-contract Tellor360 is Token{
+contract Tellor360 is BaseToken{
 
 
 
     constructor(address _flexAddress) {
         //mint a few people some tokens (those locked)
+
+        //on switch over, require tellorFlex values are over 12 hours old
+        //then when we switch, the governance switch can be instantaneous
+        
+        //no need for the dispute transistion
     }
 
 
@@ -30,18 +36,18 @@ contract Tellor360 is Token{
      * @dev Use this function to withdraw released tokens
      *
      */
-    function mintToTeam(){
+    function mintToTeam() external{
         //yearly is 4k * 12 mos = 48k per year (131.5 per day)
         uint256 _releasedAmount = 131.5 ether * (block.timestamp - lastReleaseTime)/(86400); 
         lastReleaseTime = block.timestamp;
         mint(owner, _releasedAmount);
     }
 
-    function mintToDAO{
+    function mintToDAO() external{
         //yearly is 4k * 12 mos = 48k per year (131.5 per day)
         uint256 _releasedAmount = 131.5 ether * (block.timestamp - lastReleaseTime)/(86400); 
         lastReleaseTime = block.timestamp;
-        mint(addresses[_GOVERNANCE_ADDRESS], _releasedAmount);
+        mint(addresses[_GOVERNANCE_CONTRACT], _releasedAmount);
     }
 
     /**
@@ -65,6 +71,11 @@ contract Tellor360 is Token{
      */
     function verify() external pure returns (uint256) {
         return 9999;
+    }
+
+    //allows team to gain control of any tokens sent directly to this contract (and send them back))
+    function transferOutOfContract() external{
+        transfer(owner,balanceOf(address(this)));
     }
 
 }
