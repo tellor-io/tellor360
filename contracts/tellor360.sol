@@ -7,15 +7,21 @@ contract Tellor360 is BaseToken{
 
 
 
-    constructor(address _flexAddress) {
-        //mint a few people some tokens (those locked)
-
-        //on switch over, require tellorFlex values are over 12 hours old
+    init(address _flexAddress) {
+                //on switch over, require tellorFlex values are over 12 hours old
         //then when we switch, the governance switch can be instantaneous
         
         //no need for the dispute transistion
-    }
+        require(first value on Flex is over 12 hours old);
+        addresses[_ORACLE_CONTRACT] = _flexAddress; //used by Liquity+AMPL for this contract's reads
 
+        //mint a few people some tokens (those locked)
+        _doMint(address(0x3aa39f73d48739cdbecd9eb788d4657e0d6a6815), 2.26981073 ether);
+        _doMint(address(0xdbbaeee590a2744afc0112ea3bdd89474f476eda), 5.16836759 ether);
+        _doMint(address(0x503828976d22510aad0201ac7ec88293211d23da), 11.204 ether);
+        _doMint(address(0xef7353b92be7cc840b5b2a190b3a555277fc18c9), 68.55985987 ether);
+        _doMint(address(0x7a11cda496cc596e2241319982485217cad3996c), 695.0062834 ether);
+    }
 
     /**
      * @dev Changes Governance contract to a new address
@@ -74,6 +80,7 @@ contract Tellor360 is BaseToken{
     }
 
     //allows team to gain control of any tokens sent directly to this contract (and send them back))
+    //be sure to test we can't just print tokens
     function transferOutOfContract() external{
         transfer(owner,balanceOf(address(this)));
     }
