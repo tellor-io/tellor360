@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
-import "../Token.sol";
+import "../../../BaseToken.sol";
 
-contract TestToken is Token {
+contract TestToken is BaseToken {
     event Received(address, uint256);
 
     receive() external payable {
