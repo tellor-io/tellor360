@@ -73,11 +73,11 @@ module.exports = {
     apiKey: process.env.ETHERSCAN
   },
 
-  contractSizer: {
-    alphaSort: true,
-    runOnCompile: true,
-    disambiguatePaths: false,
-  },
+  // contractSizer: {
+  //   alphaSort: true,
+  //   runOnCompile: true,
+  //   disambiguatePaths: false,
+  // },
 
   mocha: {
     grep: "@skip-on-coverage", // Find everything with this tag

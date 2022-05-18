@@ -21,7 +21,7 @@ describe("End-to-End Tests - One", function() {
     let cfac,ofac,tfac,gfac,parachute,govBig,govTeam
     let govSigner = null
 
-  beforeEach("deploy and setup TellorX", async function() {
+  beforeEach("deploy and setup Tellor360", async function() {
 
     await hre.network.provider.request({
       method: "hardhat_reset",
@@ -35,6 +35,11 @@ describe("End-to-End Tests - One", function() {
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [BIGWALLET]}
+    )
+
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [PARACHUTE]}
     )
 
     await hre.network.provider.request({
@@ -66,13 +71,13 @@ describe("End-to-End Tests - One", function() {
 
     oldTellor = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor", tellorMaster)
     governance = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor", CURR_GOV)
+    parachute = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor",PARACHUTE, devWallet);
+
 
     await governance.connect(devWallet).proposeVote(tellorMaster, 0x3c46a185, newTellor.address, 0)
 
     let voteCount = await governance.getVoteCount()
-    console.log(1)
     await governance.connect(devWallet).vote(voteCount,true, false)
-    console.log(2)
     await governance.connect(bigWallet).vote(voteCount,true, false)
 
     await h.advanceTime(86400 * 8)
@@ -91,5 +96,44 @@ describe("End-to-End Tests - One", function() {
   it("Mine 2 values on 50 different ID's", async function() {
   });
   
+  it("Parachute Tests -- rescue failed update", async function() {
+    await expect(
+      parachute.rescueFailedUpdate(),
+      "tellor address should be valid"
+    ).to.be.reverted
+
+    console.log("here")
+    
+    await governance.connect(devWallet).proposeVote(tellorMaster, 0x3c46a185, ethers.constants.AddressZero, 0)
+    let voteCount = await governance.getVoteCount()
+    await governance.connect(devWallet).vote(voteCount,true, false)
+    await governance.connect(bigWallet).vote(voteCount,true, false)
+
+    await h.advanceTime(86400 * 8)
+    await governance.tallyVotes(voteCount)
+    await h.advanceTime(86400 * 2.5)
+    await governance.executeVote(voteCount)
+    await h.advanceTime(86400 * 8)
+
+    console.log(0)
+
+    console.log(oldTellor.address)
+
+    let tellorContract = '0x0f1293c916694ac6af4daa2f866f0448d0c2ce8847074a7896d397c961914a08'
+    console.log("here")
+    await expect(
+      oldTellor.getAddressVars(tellorContract),
+      "shouldn't be able to read"
+    ).to.be.reverted
+    console.log("here2")
+    //throw deity to parachute
+    await parachute.rescueFailedUpdate()
+    //get it back!
+    console.log(1 )
+    await governance.changeControllerContract(controller.address)
+    //read tellor contract adddres
+    let newAdd = await tellor.getAddressVars(tellorContract)
+    await assert(newAdd == controller.address, "Tellor's address was not updated")
+  })
 
 });
