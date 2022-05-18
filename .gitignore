@@ -4,6 +4,7 @@ artifacts/
 /dist
 /tmp
 /out-tsc
+cache/
 
 # Runtime data
 pids
