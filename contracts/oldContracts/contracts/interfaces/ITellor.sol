@@ -16,7 +16,7 @@ interface ITellor{
     function changeUint(bytes32 _target, uint256 _amount) external;
     function migrate() external;
     function mint(address _reciever, uint256 _amount) external;
-    function init() external;
+    function init(address _flexAddress) external;
     function getAllDisputeVars(uint256 _disputeId) external view returns (bytes32,bool,bool,bool,address,address,address,uint256[9] memory,int256);
     function getDisputeIdByDisputeHash(bytes32 _hash) external view returns (uint256);
     function getDisputeUintVars(uint256 _disputeId, bytes32 _data) external view returns(uint256);
