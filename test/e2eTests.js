@@ -76,8 +76,9 @@ describe("End-to-End Tests - One", function() {
     await oracle.deployed()
 
     await tellor.connect(devWallet).transfer(accounts[1].address, web3.utils.toWei("100"));
-    console.log(await tellor.balanceOf(accounts[1].address) / 1E18)
-    await oracle.connect(accounts[1]).depositStake(BigInt(1))
+    await tellor.connect(accounts[1]).approve(oracle.address, BigInt(10E18))
+
+    await oracle.connect(accounts[1]).depositStake(BigInt(10E18))
     await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
 
     controllerFactory = await ethers.getContractFactory("Test360")
@@ -147,13 +148,16 @@ describe("End-to-End Tests - One", function() {
     await liquityPriceFeed.fetchPrice()
     lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
 
-    // assert(lastGoodPrice == "3395140000000000000000", "Liquity ether price should be correct")
+    expect(lastGoodPrice).to.equal("2075224047850000000000", "Liquity ether price should be correct")
     await tellor.connect(bigWallet).transfer(accounts[10].address, BigInt(100E18))
-    await oracle.connect(accounts[10]).depositStake(BigInt(11E18))
-    await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395150000"),0,'0x')
+    await tellor.connect(accounts[10]).approve(oracle.address, BigInt(10E18))
+
+    await oracle.connect(accounts[10]).depositStake(BigInt(10E18))
+    await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("2095150000"),0,'0x')
+    await h.advanceTime(60*60*12)
     await liquityPriceFeed.fetchPrice()
     lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
-    assert(lastGoodPrice == "3395150000000000000000", "Liquity ether price should be correct")
+    expect(lastGoodPrice).to.eq("2095224047850000000000", "Liquity ether price should be correct")
     await h.advanceTime(60*60*12)
     await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395160000"),1,'0x')
     await liquityPriceFeed.fetchPrice()
