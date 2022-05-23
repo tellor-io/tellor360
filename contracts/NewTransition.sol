@@ -95,6 +95,52 @@ contract NewTransition is TellorStorage, TellorVars {
         );
     }
 
+
+/**
+     * @dev Returns the latest value for a specific request ID.
+     * @param _requestId the requestId to look up
+     * @return uint256 of the value of the latest value of the request ID
+     * @return bool of whether or not the value was successfully retrieved
+     */
+    function getCurrentValue(uint256 _requestId)
+        external
+        view
+        returns (uint256, bool)
+    {
+        // Try the new contract first
+        uint256 _timeCount = IOracle(addresses[_ORACLE_CONTRACT]).getNewValueCountbyQueryId(bytes32(_requestId));
+        if (_timeCount != 0) {
+            // If timestamps for the ID exist, there is value, so return the value
+            return (
+                retrieveData(
+                    _requestId,
+                    IOracle(addresses[_ORACLE_CONTRACT])
+                        .getReportTimestampByIndex(
+                            bytes32(_requestId),
+                            _timeCount - 1
+                        )
+                ),
+                true
+            );
+        } else {
+            // Else, look at old value + timestamps since mining has not started
+            Request storage _request = requestDetails[_requestId];
+            if (_request.requestTimestamps.length != 0) {
+                return (
+                    retrieveData(
+                        _requestId,
+                        _request.requestTimestamps[
+                            _request.requestTimestamps.length - 1
+                        ]
+                    ),
+                    true
+                );
+            } else {
+                return (0, false);
+            }
+        }
+    }
+
     /**
      * @dev Gets id if a given hash has been disputed
      * @param _hash is the sha256(abi.encodePacked(_miners[2],_requestId,_timestamp));
