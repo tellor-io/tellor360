@@ -3,6 +3,8 @@ pragma solidity 0.8.3;
 
 import "./oldContracts/contracts/tellor3/TellorStorage.sol";
 import "./oldContracts/contracts/TellorVars.sol";
+import "./oldContracts/contracts/interfaces/IGovernance.sol";
+
 
 /**
  @author Tellor Inc.
@@ -47,6 +49,29 @@ contract BaseToken is TellorStorage, TellorVars {
         require(_spender != address(0), "ERC20: approve to the zero address");
         _allowances[msg.sender][_spender] = _amount;
         emit Approval(msg.sender, _spender, _amount);
+        return true;
+    }
+
+    /**
+     * @dev This function approves a transfer of _amount tokens from _from to _to
+     * @param _from is the address the tokens will be transferred from
+     * @param _to is the address the tokens will be transferred to
+     * @param _amount is the number of tokens to transfer
+     * @return bool true if spender approved successfully
+     */
+    function approveAndTransferFrom(
+        address _from,
+        address _to,
+        uint256 _amount
+    ) external returns (bool) {
+        require(
+            (IGovernance(addresses[_GOVERNANCE_CONTRACT])
+                .isApprovedGovernanceContract(msg.sender) ||
+                msg.sender == addresses[_TREASURY_CONTRACT] ||
+                msg.sender == addresses[_ORACLE_CONTRACT]),
+            "Only the Governance, Treasury, or Oracle Contract can approve and transfer tokens"
+        );
+        _doTransfer(_from, _to, _amount);
         return true;
     }
 

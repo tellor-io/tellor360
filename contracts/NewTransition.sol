@@ -4,6 +4,7 @@ pragma solidity 0.8.3;
 import "./oldContracts/contracts/tellor3/TellorStorage.sol";
 import "./oldContracts/contracts/TellorVars.sol";
 import "./oldContracts/contracts/interfaces/IOracle.sol";
+import "hardhat/console.sol";
 
 /**
  @author Tellor Inc.
@@ -252,8 +253,10 @@ contract NewTransition is TellorStorage, TellorVars {
         uint256 _val = IOracle(addresses[_ORACLE_CONTRACT])
             .getNewValueCountbyQueryId(bytes32(_requestId));
         if (_val > 0) {
+            console.log("value count from new oracle", _val);
             return _val;
         } else {
+            console.log("value count from old oracle", _val);
             return requestDetails[_requestId].requestTimestamps.length;
         }
     }
@@ -271,11 +274,12 @@ contract NewTransition is TellorStorage, TellorVars {
     {
         // Try new contract first, but give old timestamp if new mining has not started
         try
-            IOracle(addresses[_ORACLE_CONTRACT]).getReportTimestampByIndex(
+            IOracle(addresses[_ORACLE_CONTRACT]).getTimestampbyQueryIdandIndex(
                 bytes32(_requestId),
                 _index
             )
         returns (uint256 _val) {
+            console.log("new oracle timestamp", _val);
             return _val;
         } catch {
             return requestDetails[_requestId].requestTimestamps[_index];
@@ -323,9 +327,15 @@ contract NewTransition is TellorStorage, TellorVars {
         if (_timestamp < uints[_SWITCH_TIME]) {
             return requestDetails[_requestId].finalValues[_timestamp];
         }
+        console.log("value retrieved: ",             _sliceUint(
+                IOracle(addresses[_ORACLE_CONTRACT]).retrieveData(
+                    bytes32(_requestId),
+                    _timestamp
+                )
+            ));
         return
             _sliceUint(
-                IOracle(addresses[_ORACLE_CONTRACT]).getValueByTimestamp(
+                IOracle(addresses[_ORACLE_CONTRACT]).retrieveData(
                     bytes32(_requestId),
                     _timestamp
                 )

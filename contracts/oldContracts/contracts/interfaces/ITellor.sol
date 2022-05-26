@@ -91,6 +91,10 @@ interface ITellor{
     function getCurrentReward(bytes32 _queryId) external view returns(uint256, uint256);
     function getCurrentValue(bytes32 _queryId) external view returns(bytes memory);
     function getTimeOfLastNewValue() external view returns(uint256);
+    function getTimestampbyRequestIDandIndex(uint256 _requestId, uint256 _index)
+        external
+        view
+        returns (uint256);
     //Treasury
     function issueTreasury(uint256 _amount, uint256 _rate, uint256 _duration) external;
     function payTreasury(address _investor,uint256 _id) external;

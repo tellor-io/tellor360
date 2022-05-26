@@ -26,7 +26,7 @@ describe("End-to-End Tests - One", function() {
     let govSigner = null
     let devWallet = null
 
-  beforeEach("deploy and setup Tellor360", async function () {
+  beforeEach("deploy and setup Tellor360", async function() {
 
     await hre.network.provider.request({
       method: "hardhat_reset",
@@ -91,7 +91,6 @@ describe("End-to-End Tests - One", function() {
     await tellor.connect(devWallet).transfer(accounts[3].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[3]).depositStake()
     await oldOracle.connect(accounts[3]).submitValue(h.uintTob32(70), h.bytes(100), 0, '0x')
-    console.log(1)
 
     //disputer 
     await tellor.connect(devWallet).transfer(accounts[4].address, web3.utils.toWei("100"));
@@ -159,7 +158,11 @@ describe("End-to-End Tests - One", function() {
     await assert(newAdd == controller.address, "Tellor's address was not updated")
   })
 
-  it("Manually verify that Liquity still work (mainnet fork their state after oracle updates)", async function() {
+  it("Manually verify that Liquity still work (mainnet fork their state after oracle updates)", async function () {
+
+
+    await tellor.connect(devWallet).init(oracle.address)
+
     let liquityPriceFeed = await ethers.getContractAt("contracts/testing/IPriceFeed.sol:IPriceFeed", LIQUITY_PRICE_FEED)
     console.log(1)
     await liquityPriceFeed.fetchPrice()
@@ -172,24 +175,47 @@ describe("End-to-End Tests - One", function() {
 
     await oracle.connect(accounts[10]).depositStake(BigInt(10E18))
     console.log(h.uintTob32("1"))
-    await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("2095150000"),0,'0x')
+    await oracle.connect(accounts[10]).submitValue(h.uintTob32(1),h.uintTob32("2095150000"),0,'0x')
+    await h.advanceTime(60*60*12)
     console.log( await liquityPriceFeed.tellorCaller())
     await liquityPriceFeed.fetchPrice()
     lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
-    expect(lastGoodPrice).to.eq("2095224047850000000000", "Liquity ether price should be correct")
     await h.advanceTime(60*60*12)
-    await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395160000"),1,'0x')
+    console.log("value count ", await oracle.getNewValueCountbyQueryId(h.uintTob32(1)))
+    await oracle.connect(accounts[10]).submitValue(h.uintTob32(1),h.uintTob32("2095150000"),2,'0x')
+    console.log(2)
+    await liquityPriceFeed.fetchPrice()
+    lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
+    await h.advanceTime(60*60*12)
+
+    let valueCount = await tellor.getNewValueCountbyRequestId(h.uintTob32(1))
+    console.log(valueCount)
+
+    let timestamp = await tellor.getTimestampbyRequestIDandIndex(1, valueCount - 1)
+    console.log(timestamp)
+
+    // let value = await tellor.retrieveData(1, timestamp)
+    // console.log(value)
+
+    expect(String(lastGoodPrice)).to.eq("2095150000000000000000", "Liquity ether price should be correct")
+    await h.advanceTime(60*60*12)
+    console.log(3)
+    await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395160000"),3,'0x')
     await liquityPriceFeed.fetchPrice()
     lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
     assert(lastGoodPrice == "3395160000000000000000", "Liquity ether price should be correct")
     await h.advanceTime(60*60*12)
-    await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395170000"),2,'0x')
+    await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395170000"),4,'0x')
     await liquityPriceFeed.fetchPrice()
     lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
     assert(lastGoodPrice == "3395170000000000000000", "Liquity ether price should be correct")
   });
 
-  it("disputes on tellorx work for first 12 hours", async function () {
+  it("disputes on tellorx continue", async function () {
+
+    console.log(await oracle.getStakerInfo(accounts[3].address))
+
+    await tellor.connect(accounts[3]).withdrawStake()
 
     //transfer tokens to account for staking
     await tellor.connect(bigWallet).transfer(accounts[10].address, BigInt(100E18))
@@ -199,7 +225,7 @@ describe("End-to-End Tests - One", function() {
 
     console.log("here")
     //account submits a value
-    await tellorXOracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395170000"),2,'0x')
+    await oldOracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395170000"),2,'0x')
 
     //assert value is inaccessible from tellorflex
     // await oracle.get
@@ -209,7 +235,53 @@ describe("End-to-End Tests - One", function() {
 
   })
 
-  it("stake deposits on tellorflex round down to nearest multiple of 10", async function() {
+  it("stake deposits on tellorflex round down to nearest multiple of 10", async function () {
+
+    let bigStaker = accounts[5]
+    let bigStaker2 = accounts[6]
+    let miniStaker = accounts[7]
+
+    let bigStake = BigInt(21E18)
+    let miniStake = BigInt(7E18)
+
+    let reportingLock = BigInt(await oracle.reportingLock())
+    let stakeAmount = BigInt(await oracle.stakeAmount())
+
+    await tellor.connect(devWallet).transfer(bigStaker.address, bigStake)
+    await tellor.connect(devWallet).transfer(bigStaker2.address, bigStake)
+    await tellor.connect(devWallet).transfer(miniStaker.address, miniStake)
+
+    await tellor.connect(bigStaker).approve(oracle.address, bigStake)
+    await tellor.connect(bigStaker2).approve(oracle.address, bigStake)
+    await tellor.connect(miniStaker).approve(oracle.address, miniStake)
+
+    await oracle.connect(bigStaker).depositStake(bigStake)
+    await oracle.connect(bigStaker2).depositStake(bigStake)
+    await oracle.connect(miniStaker).depositStake(miniStake)
+
+    //staking 21 TRB will round down to 2 stakes (halved wait time between reports)
+    await oracle.connect(bigStaker).submitValue(h.uintTob32(71), h.bytes(100), 0, '0x')
+
+    h.advanceTime(reportingLock / (bigStake / stakeAmount))
+
+    await expect(
+      oracle.connect(bigStaker).submitValue(h.uintTob32(71), h.bytes(100), 1, '0x')
+    ).to.be.reverted
+
+    await oracle.connect(bigStaker2).submitValue(h.uintTob32(71), h.bytes(100), 1, '0x')
+
+    h.advanceTime(Number(reportingLock / (BigInt(20E18) / stakeAmount)))
+
+    await oracle.connect(bigStaker2).submitValue(h.uintTob32(71), h.bytes(100), 2, '0x')
+
+    //stake of less than stake amount should prohibit submitting values
+    await expect(
+      oracle.connect(miniStaker).submitValue(h.uintTob32(71), h.bytes(100), 3, '0x')
+    ).to.be.reverted
+    // await oracle.connect(littleStaker).submitValue(h.uintTob32(71), h.bytes(100), 2, '0x')
+
+    //staking 11 TRB will round down to 1 stake (must wait full reporter lock)
+
 
 
   })
@@ -222,41 +294,5 @@ describe("End-to-End Tests - One", function() {
     
 
   // })
-
-  it("stakers on tellorx can withdraw and re-stake on tellorflex", async function() {
-
-    //this staker has staked in the beforeEach on TellorX
-
-    let oldStakeAmount = BigInt(100E18)
-
-    let oldStakerBalance = await tellor.balanceOf(accounts[2].address)
-    
-    expect(oldStakerBalance).to.be.equal(oldStakeAmount)
-
-    //they can send their tokens now; they're unlocked
-
-    let tokensTransfered = BigInt(10E18)
-
-    let expectedBalance = BigInt(90E18)
-
-    await tellor.connect(accounts[2]).transfer(accounts[3].address, tokensTransfered)
-
-    expect(expectedBalance).to.be.equal(tokensTransfered)
-
-    //init tellorflex!
-
-    await tellor.init(oracle.address)
-
-    //they can now stake again in tellorflex
-
-    let stake = BigInt(90E18)
-
-    await tellor.connect(accounts[2]).approve(oracle.address, stake)
-    await oracle.connect(accounts[2]).depositStake(stake)
-
-    console.log(await tellor.balanceOf(accounts[2].address))
-
-
-  })
 
 });
