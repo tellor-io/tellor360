@@ -173,46 +173,41 @@ describe("Function Tests", function() {
     
   })
 
-  it("changeGovernanceContract()", async function () {
+  it("mintToTeam()", async function () {
 
-    //init tellor360
-    await tellor.connect(devWallet).init(oracle.address)
+    //get _OWNER account address
+    let owner = await tellor.getAddressVars(h.hash("_OWNER"))
+    expect(owner).to.equal(DEV_WALLET)
 
-    //deploy new gov contract
-    let governanceFactory = await ethers.getContractFactory("Governance")
-    governance1 = await governanceFactory.deploy()
-    await governance1.deployed()
-
-    //require 1: only governance can change the governance contract
-    await expect(
-      tellor.connect(accounts[1]).changeGovernanceContract(governance1.address),
-      "rando account was able to change governace contract"
-    ).to.be.reverted
-
-    //require 2: require new gov vontract is valid
-
-    let addressEncoded = ethers.utils.defaultAbiCoder.encode([ "address" ],[accounts[1].address])
-    await governance.connect(devWallet).proposeVote(tellorMaster, 0xe8ce51d7, addressEncoded, 0)
+    //get _OWNER contract balance
+    let oldBalance = BigInt(await tellor.balanceOf(owner))
 
 
-    let voteCount = await governance.getVoteCount()
+    //fast forward one day
+    h.advanceTime(86400)
 
-    await governance.connect(devWallet).vote(voteCount,true, false)
-    await governance.connect(bigWallet).vote(voteCount,true, false)
-    await governance.connect(reporter).vote(voteCount, true, false)
+    //mint
+    await tellor.mintToTeam()
 
-    await h.advanceTime(86400 * 8)
-    await governance.tallyVotes(voteCount)
-    await h.advanceTime(86400 * 2.5)
-    await governance.executeVote(voteCount)
+    //_OWNER balance should be greater by 131.5 tokens
+    let newBalance = BigInt(await tellor.balanceOf(owner))
 
-    //sucessfully change gov contract...
+    expect(newBalance).to.equal(oldBalance + BigInt(1315E17))
 
-    //assert the _GOVERNANCE_CONTRACT is now the new contract
   })
 
-  it("mintToTeam()", async function () {})
+  it("mintToOracle()", async function () {
 
-  it("mintToDAO()", async function () {})
+    //get _ORACLE_CONTRACT account address
+
+    //get _ORACLE_CONTRACT contract balance
+
+    //fast forward one day
+
+    //mint
+
+    //_ORACLE_CONTRACT balance should be greater by 131.5 tokens
+
+  })
 
 })

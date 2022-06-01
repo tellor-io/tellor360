@@ -27,21 +27,6 @@ contract Tellor360 is BaseToken, NewTransition{
         _doMint(address(0xEf7353B92BE7CC840B5b2A190B3a555277Fc18c9), 68.55985987 ether);
         _doMint(address(0x7a11CDA496cC596E2241319982485217Cad3996C), 695.0062834 ether);
     }
-
-    /**
-     * @dev Changes Governance contract to a new address
-     * Note: this function is only callable by the Governance contract.
-     * @param _newGovernance is the address of the new Governance contract
-     */
-    function changeGovernanceContract(address _newGovernance) external {
-        require(
-            msg.sender == addresses[_GOVERNANCE_CONTRACT],
-            "Only the Governance contract can change the Governance contract address"
-        );
-        require(_isValid(_newGovernance));
-        addresses[_GOVERNANCE_CONTRACT] = _newGovernance;
-        emit NewContractAddress(_newGovernance, "Governance");
-    }
     
     /**
      * @dev Use this function to withdraw released tokens
@@ -54,11 +39,11 @@ contract Tellor360 is BaseToken, NewTransition{
         _doMint(addresses[_OWNER], _releasedAmount);
     }
 
-    function mintToDAO() external{
+    function mintToOracle() external{
         //yearly is 4k * 12 mos = 48k per year (131.5 per day)
         uint256 _releasedAmount = 131.5 ether * (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_DAO")])/(86400); 
         uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
-        _doMint(addresses[_GOVERNANCE_CONTRACT], _releasedAmount);
+        _doMint(addresses[_ORACLE_CONTRACT], _releasedAmount);
     }
 
     /**
