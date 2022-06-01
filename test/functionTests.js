@@ -175,6 +175,8 @@ describe("Function Tests", function() {
 
   it("mintToTeam()", async function () {
 
+    await tellor.connect(devWallet).init(oracle.address)
+
     //get _OWNER account address
     let owner = await tellor.getAddressVars(h.hash("_OWNER"))
     expect(owner).to.equal(DEV_WALLET)
@@ -197,6 +199,9 @@ describe("Function Tests", function() {
   })
 
   it("mintToOracle()", async function () {
+
+    await tellor.connect(devWallet).init(oracle.address)
+
 
     //get _ORACLE_CONTRACT account address
 
