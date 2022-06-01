@@ -202,16 +202,22 @@ describe("Function Tests", function() {
 
     await tellor.connect(devWallet).init(oracle.address)
 
-
     //get _ORACLE_CONTRACT account address
+    let owner = await tellor.getAddressVars(h.hash("_ORACLE_CONTRACT"))
 
     //get _ORACLE_CONTRACT contract balance
+    let oldBalance = BigInt(await tellor.balanceOf(owner))
 
     //fast forward one day
+    h.advanceTime(86400)
 
     //mint
+    await tellor.mintToOracle()
 
     //_ORACLE_CONTRACT balance should be greater by 131.5 tokens
+    let newBalance = BigInt(await tellor.balanceOf(owner))
+
+    expect(newBalance).to.equal(oldBalance + BigInt(1315E17))
 
   })
 

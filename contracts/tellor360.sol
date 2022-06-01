@@ -19,6 +19,11 @@ contract Tellor360 is BaseToken, NewTransition{
         uint256 _firstTimestamp = IOracle(_flexAddress).getTimestampbyQueryIdandIndex(bytes32(_id),0);
         require(block.timestamp - _firstTimestamp >= 12 hours, "contract should be at least 12 hours old");
         addresses[_ORACLE_CONTRACT] = _flexAddress; //used by Liquity+AMPL for this contract's reads
+
+        //init minting uints
+        uints[keccak256("_LAST_RELEASE_TIME_TEAM")] = block.timestamp;
+        uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
+
         //mint a few people some tokens (those locked)
         //triple check: https://docs.google.com/spreadsheets/d/1z1GO_9cWRBbWxq651Z7FLoA6iI1nWE4lEHB9OPrZjko/edit#gid=0
         _doMint(address(0x3aa39f73D48739CDBeCD9EB788D4657E0d6a6815), 2.26981073 ether);
@@ -33,6 +38,7 @@ contract Tellor360 is BaseToken, NewTransition{
      *
      */
     function mintToTeam() external{
+        require(uints[keccak256("_INIT")] == 1, "controller not initted");
         //yearly is 4k * 12 mos = 48k per year (131.5 per day)
         uint256 _releasedAmount = 131.5 ether * (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_TEAM")])/(86400); 
         uints[keccak256("_LAST_RELEASE_TIME_TEAM")] = block.timestamp;
@@ -40,6 +46,7 @@ contract Tellor360 is BaseToken, NewTransition{
     }
 
     function mintToOracle() external{
+        require(uints[keccak256("_INIT")] == 1, "controller not initted");
         //yearly is 4k * 12 mos = 48k per year (131.5 per day)
         uint256 _releasedAmount = 131.5 ether * (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_DAO")])/(86400); 
         uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
