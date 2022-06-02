@@ -221,4 +221,25 @@ describe("Function Tests", function() {
 
   })
 
+  it("transferOutOfContract()", async function () {
+
+    await tellor.connect(devWallet).init(oracle.address)
+
+    let oldTellorBalance = BigInt(await tellor.balanceOf(tellor.address))
+    let oldMultisBalance = BigInt(await tellor.balanceOf(DEV_WALLET))
+
+    //transfer tokens from contract to multis
+    await tellor.transferOutOfContract()
+
+    //read new balance of multis
+    let newTellorBalance = BigInt(await tellor.balanceOf(tellor.address))
+    let newMultisBalance = BigInt(await tellor.balanceOf(DEV_WALLET))
+
+    expect(newTellorBalance).to.be.equal(BigInt(0))
+    expect(newMultisBalance).to.be.equal(oldMultisBalance + oldTellorBalance)
+
+
+
+  })
+
 })

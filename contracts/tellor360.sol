@@ -6,7 +6,11 @@ import "./NewTransition.sol";
 
 contract Tellor360 is BaseToken, NewTransition{
 
+    address public proposedOracle;
+    uint256 public timeProposedUpdated;
+
     event NewContractAddress(address _newContract, string _contractName);
+    event NewOracleAddress(address _newOracle, uint256 timestamp);
 
     function init(address _flexAddress) external {
         require(msg.sender == addresses[_OWNER], "only owner");
@@ -31,6 +35,41 @@ contract Tellor360 is BaseToken, NewTransition{
         _doMint(address(0x503828976D22510aad0201ac7EC88293211D23Da), 11.204 ether);
         _doMint(address(0xEf7353B92BE7CC840B5b2A190B3a555277Fc18c9), 68.55985987 ether);
         _doMint(address(0x7a11CDA496cC596E2241319982485217Cad3996C), 695.0062834 ether);
+    }
+
+    function updateOracleAddress() external {
+
+        address officialOracle = addresses[_ORACLE_CONTRACT];
+                    
+        bytes memory _b = abi.encode("TellorOracleAddress");
+        bytes32 _queryID = keccak256(_b);
+
+        bytes memory value;
+
+        value = IOracle(officialOracle).retrieveData(_queryID, block.timestamp - 12 hours);
+        address val = abi.decode(value,(address));
+        require(val != officialOracle, "nothing to upgrade");
+
+        if (val != proposedOracle) {
+
+            proposedOracle = val;
+            timeProposedUpdated = block.timestamp;
+
+        }
+
+        else {
+            require(block.timestamp > timeProposedUpdated + 7 days);
+            officialOracle = val;
+            
+            //ensuring liveness and ABI matches on the new oracle contract
+            uint256 _id = 1;
+            uint256 _firstTimestamp = IOracle(officialOracle).getTimestampbyQueryIdandIndex(bytes32(_id),0);
+            require(block.timestamp - _firstTimestamp >= 12 hours, "contract should be at least 12 hours old");
+            addresses[_ORACLE_CONTRACT] = officialOracle;
+
+            emit NewOracleAddress(officialOracle, block.timestamp);
+        }
+
     }
     
     /**
