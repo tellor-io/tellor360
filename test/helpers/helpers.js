@@ -87,6 +87,10 @@ advanceTime = async (time) =>{
     return web3.utils.toWei(n)
   }
 
+  function changeControllerContract(newAddress) {
+    
+  }
+
 module.exports = {
   stakeAmount: new BN(web3.utils.toWei("500", "ether")),
   timeTarget: 240,

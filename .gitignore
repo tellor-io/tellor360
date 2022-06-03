@@ -1,9 +1,10 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
-
+artifacts/
 # compiled output
 /dist
 /tmp
 /out-tsc
+cache/
 
 # Runtime data
 pids
