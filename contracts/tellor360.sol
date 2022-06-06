@@ -5,10 +5,7 @@ import "./BaseToken.sol";
 import "./NewTransition.sol";
 
 contract Tellor360 is BaseToken, NewTransition{
-
-    address public proposedOracle;
-    uint256 public timeProposedUpdated;
-
+    
     event NewContractAddress(address _newContract, string _contractName);
     event NewOracleAddress(address _newOracle, uint256 timestamp);
 
@@ -23,11 +20,9 @@ contract Tellor360 is BaseToken, NewTransition{
         uint256 _firstTimestamp = IOracle(_flexAddress).getTimestampbyQueryIdandIndex(bytes32(_id),0);
         require(block.timestamp - _firstTimestamp >= 12 hours, "contract should be at least 12 hours old");
         addresses[_ORACLE_CONTRACT] = _flexAddress; //used by Liquity+AMPL for this contract's reads
-
         //init minting uints
         uints[keccak256("_LAST_RELEASE_TIME_TEAM")] = block.timestamp;
         uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
-
         //mint a few people some tokens (those locked)
         //triple check: https://docs.google.com/spreadsheets/d/1z1GO_9cWRBbWxq651Z7FLoA6iI1nWE4lEHB9OPrZjko/edit#gid=0
         _doMint(address(0x3aa39f73D48739CDBeCD9EB788D4657E0d6a6815), 2.26981073 ether);
@@ -38,38 +33,21 @@ contract Tellor360 is BaseToken, NewTransition{
     }
 
     function updateOracleAddress() external {
-
-        address officialOracle = addresses[_ORACLE_CONTRACT];
-                    
-        bytes memory _b = abi.encode("TellorOracleAddress");
-        bytes32 _queryID = keccak256(_b);
-
+        bytes32 _queryID = keccak256(abi.encode("TellorOracleAddress"));
         bytes memory value;
-
-        value = IOracle(officialOracle).retrieveData(_queryID, block.timestamp - 12 hours);
+        value = IOracle(addresses[_ORACLE_CONTRACT]).retrieveData(_queryID, block.timestamp - 12 hours);
         address val = abi.decode(value,(address));
-        require(val != officialOracle, "nothing to upgrade");
-
-        if (val != proposedOracle) {
-
-            proposedOracle = val;
-            timeProposedUpdated = block.timestamp;
-
-        }
-
-        else {
-            require(block.timestamp > timeProposedUpdated + 7 days);
-            officialOracle = val;
-            
-            //ensuring liveness and ABI matches on the new oracle contract
-            uint256 _id = 1;
-            uint256 _firstTimestamp = IOracle(officialOracle).getTimestampbyQueryIdandIndex(bytes32(_id),0);
+        if(val == addresses[keccak256("_PROPOSED_ORACLE")]){
+            require(block.timestamp > uints[keccak256("_TIME_PROPOSED_UPDATED")] + 7 days);
+            uint256 _firstTimestamp = IOracle(val).getTimestampbyQueryIdandIndex(bytes32(uint256(1)),0);
             require(block.timestamp - _firstTimestamp >= 12 hours, "contract should be at least 12 hours old");
-            addresses[_ORACLE_CONTRACT] = officialOracle;
-
-            emit NewOracleAddress(officialOracle, block.timestamp);
+            addresses[_ORACLE_CONTRACT] = val;
+            emit NewOracleAddress(val, block.timestamp);
         }
-
+        else{
+            addresses[keccak256("_PROPOSED_ORACLE")] = val;
+            uints[keccak256("_TIME_PROPOSED_UPDATED")] = block.timestamp;
+        }
     }
     
     /**
