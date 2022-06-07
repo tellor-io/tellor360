@@ -66,7 +66,7 @@ contract Tellor360 is BaseToken, NewTransition{
         require(uints[keccak256("_INIT")] == 1, "controller not initted");
         //yearly is 4k * 12 mos = 48k per year (131.5 per day)
         uint256 _releasedAmount = 131.5 ether * (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_ORACLE")])/(86400); 
-        uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
+        uints[keccak256("_LAST_RELEASE_TIME_ORACLE")] = block.timestamp;
         _doMint(addresses[_ORACLE_CONTRACT], _releasedAmount);
     }
 
