@@ -19,7 +19,7 @@ contract Tellor360 is BaseToken, NewTransition{
     }
     
     // Functions
-    //??? should this be _flexAddress or TellorX address? tellor flex is not on mainnet
+    //BL--??? should this be _flexAddress or TellorX address? tellor flex is not on mainnet
     /**
      * @dev Use this function to initiate the contract
      * @param _flexAddress is the contract address that will be deprecated by this contract
@@ -87,15 +87,14 @@ contract Tellor360 is BaseToken, NewTransition{
         _doMint(addresses[_OWNER], _releasedAmount);
     }
 
-//BL--??? is this supposed to go to the DAO or to the oracle contract to pay the timebased rewards?
     /**
-     * @dev Use this function to withdraw released tokens to the DAO
+     * @dev Use this function to withdraw released tokens to the oracle 
      */
     function mintToOracle() external{
         require(uints[keccak256("_INIT")] == 1, "controller not initiated");
         //yearly is 4k * 12 mos = 48k per year (131.5 per day)
-        uint256 _releasedAmount = 131.5 ether * (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_DAO")])/(86400); 
-        uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
+        uint256 _releasedAmount = 131.5 ether * (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_ORACLE")])/(86400); 
+        uints[keccak256("_LAST_RELEASE_TIME_ORACLE")] = block.timestamp;
         _doMint(addresses[_ORACLE_CONTRACT], _releasedAmount);
     }
 
@@ -122,7 +121,6 @@ contract Tellor360 is BaseToken, NewTransition{
     function verify() external pure returns (uint256) {
         return 9999;
     }
-
 
     //TODO: be sure to test we can't just print tokens
     /**
