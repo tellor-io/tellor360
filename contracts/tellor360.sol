@@ -12,7 +12,7 @@ contract Tellor360 is BaseToken, NewTransition{
     /**
      * @dev Use this to set the owner that will be able to run the init function, 
      * receive the team's tokens and tranferOutOfContract tokens mistakenly sent to it
-     * @param _multis is the flex contract address that will be deprecated by thiscontract
+     * @param _multis is the team's multis
      */
     constructor(address _multis) {
         addresses[_OWNER] = _multis;
