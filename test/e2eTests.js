@@ -6,7 +6,7 @@ var assert = require('assert');
 const web3 = require('web3');
 const { BigNumber } = require("ethers");
 
-describe("End-to-End Tests - One", function() {
+describe("End-to-End Tests - ", function() {
 
     const tellorMaster = "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0"
     const DEV_WALLET = "0x39E419bA25196794B595B2a595Ea8E527ddC9856"
@@ -72,7 +72,7 @@ describe("End-to-End Tests - One", function() {
     const tokenFactory = await ethers.getContractFactory("TestToken")
     token = await tokenFactory.deploy()
     await token.deployed()
-
+  
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
     oracle = await oracleFactory.deploy(tellorMaster, BIGWALLET, BigInt(10E18), 12*60*60)
     await oracle.deployed()
@@ -97,29 +97,33 @@ describe("End-to-End Tests - One", function() {
     await tellor.connect(devWallet).transfer(accounts[4].address, web3.utils.toWei("100"));
     let latestTimestamp = await oldOracle.getTimeOfLastNewValue()
     await governance.connect(accounts[4]).beginDispute(h.uintTob32(70), latestTimestamp)
-
+    console.log(2)
 
     controllerFactory = await ethers.getContractFactory("Test360")
-    controller = await controllerFactory.deploy()
+    controller = await controllerFactory.deploy(DEV_WALLET)
     await controller.deployed()
+    console.log(3)
 
     let controllerAddressEncoded = ethers.utils.defaultAbiCoder.encode([ "address" ],[controller.address])
     await governance.connect(devWallet).proposeVote(tellorMaster, 0x3c46a185, controllerAddressEncoded, 0)
-
+    console.log(4)
     let voteCount = await governance.getVoteCount()
+    console.log(5)
 
     await governance.connect(devWallet).vote(voteCount,true, false)
     await governance.connect(bigWallet).vote(voteCount,true, false)
     await governance.connect(reporter).vote(voteCount, true, false)
+    console.log(6)
 
     await h.advanceTime(86400 * 8)
     await governance.tallyVotes(voteCount)
     await h.advanceTime(86400 * 2.5)
     await governance.executeVote(voteCount)
+    console.log(7)
 
   });
-  it("Mine 2 values on 50 different ID's", async function () {
-  });
+  // it("Mine 2 values on 50 different ID's", async function () {
+  // });
   
   it("Parachute Tests -- rescue failed update", async function () {
 

@@ -99,7 +99,7 @@ describe("End-to-End Tests - One", function() {
 
 
     controllerFactory = await ethers.getContractFactory("Test360")
-    controller = await controllerFactory.deploy()
+    controller = await controllerFactory.deploy(DEV_WALLET)
     await controller.deployed()
 
     let controllerAddressEncoded = ethers.utils.defaultAbiCoder.encode([ "address" ],[controller.address])
@@ -117,8 +117,8 @@ describe("End-to-End Tests - One", function() {
     await governance.executeVote(voteCount)
 
   });
-  it("Mine 2 values on 50 different ID's", async function () {
-  });
+  // it("Mine 2 values on 50 different ID's", async function () {
+  // });
   
   it("Parachute Tests -- rescue failed update", async function () {
 
