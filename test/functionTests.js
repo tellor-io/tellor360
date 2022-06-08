@@ -119,7 +119,6 @@ describe("Function Tests", function() {
   });
 
   it("Init()", async function () {
-
     let refundedAccount = "0x3aa39f73D48739CDBeCD9EB788D4657E0d6a6815"
     let oldBalance = await tellor.balanceOf(refundedAccount)
 
@@ -164,77 +163,76 @@ describe("Function Tests", function() {
     await expect(
       tellor.connect(devWallet).init(oracle.address),
       "was able to init twice!"
-    ).to.be.reverted
-    
+    ).to.be.reverted  
   })
 
   it("mintToTeam()", async function () {
-
+console.log(1)
+   //fast forward 12 hours
+    h.advanceTime(60*60*12)
     await tellor.connect(devWallet).init(oracle.address)
-
+    console.log(2)
     //get _OWNER account address
     let owner = await tellor.getAddressVars(h.hash("_OWNER"))
     expect(owner).to.equal(DEV_WALLET)
-
+    console.log(3)
     //get _OWNER contract balance
     let oldBalance = BigInt(await tellor.balanceOf(owner))
-
-
+    console.log("oldBalance",oldBalance)
     //fast forward one day
     h.advanceTime(86400)
-
+    console.log(5)
     //mint
     await tellor.mintToTeam()
-
+    console.log(6)
     //_OWNER balance should be greater by 131.5 tokens
     let newBalance = BigInt(await tellor.balanceOf(owner))
-
+    console.log("newBalance", newBalance)
     expect(newBalance).to.equal(oldBalance + BigInt(1315E17))
-
+    console.log(8)
   })
 
   it("mintToOracle()", async function () {
 
+       //fast forward 12 hours
+       h.advanceTime(60*60*12)
+console.log(11)
     await tellor.connect(devWallet).init(oracle.address)
-
+    console.log(12)
     //get _ORACLE_CONTRACT account address
-    let owner = await tellor.getAddressVars(h.hash("_ORACLE_CONTRACT"))
-
+    let oracle = await tellor.getAddressVars(h.hash("_ORACLE_CONTRACT"))
+    console.log("oracle", oracle)
     //get _ORACLE_CONTRACT contract balance
-    let oldBalance = BigInt(await tellor.balanceOf(owner))
-
+    let oldBalance = BigInt(await tellor.balanceOf(oracle))
+    console.log(13)
     //fast forward one day
     h.advanceTime(86400)
 
     //mint
     await tellor.mintToOracle()
-
+    console.log(14)
     //_ORACLE_CONTRACT balance should be greater by 131.5 tokens
-    let newBalance = BigInt(await tellor.balanceOf(owner))
-
+    let newBalance = BigInt(await tellor.balanceOf(oracle))
+    console.log(15)
     expect(newBalance).to.equal(oldBalance + BigInt(1315E17))
+    console.log(16)
+  });
 
-  })
+  // it("transferOutOfContract()", async function () {
+  //   await tellor.connect(devWallet).init(oracle.address)
 
-  it("transferOutOfContract()", async function () {
+  //   let oldTellorBalance = BigInt(await tellor.balanceOf(tellor.address))
+  //   let oldMultisBalance = BigInt(await tellor.balanceOf(DEV_WALLET))
 
-    await tellor.connect(devWallet).init(oracle.address)
+  //   //transfer tokens from contract to multis
+  //   await tellor.transferOutOfContract()
 
-    let oldTellorBalance = BigInt(await tellor.balanceOf(tellor.address))
-    let oldMultisBalance = BigInt(await tellor.balanceOf(DEV_WALLET))
+  //   //read new balance of multis
+  //   let newTellorBalance = BigInt(await tellor.balanceOf(tellor.address))
+  //   let newMultisBalance = BigInt(await tellor.balanceOf(DEV_WALLET))
 
-    //transfer tokens from contract to multis
-    await tellor.transferOutOfContract()
-
-    //read new balance of multis
-    let newTellorBalance = BigInt(await tellor.balanceOf(tellor.address))
-    let newMultisBalance = BigInt(await tellor.balanceOf(DEV_WALLET))
-
-    expect(newTellorBalance).to.be.equal(BigInt(0))
-    expect(newMultisBalance).to.be.equal(oldMultisBalance + oldTellorBalance)
-
-
-
-  })
+  //   expect(newTellorBalance).to.be.equal(BigInt(0))
+  //   expect(newMultisBalance).to.be.equal(oldMultisBalance + oldTellorBalance)
+  // });
 
 })

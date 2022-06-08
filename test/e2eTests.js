@@ -100,7 +100,7 @@ describe("End-to-End Tests - ", function() {
     console.log(2)
 
     controllerFactory = await ethers.getContractFactory("Test360")
-    controller = await controllerFactory.deploy()
+    controller = await controllerFactory.deploy(DEV_WALLET)
     await controller.deployed()
     console.log(3)
 
