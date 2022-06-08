@@ -117,8 +117,8 @@ describe("End-to-End Tests - One", function() {
     await governance.executeVote(voteCount)
 
   });
-  it("Mine 2 values on 50 different ID's", async function () {
-  });
+  // it("Mine 2 values on 50 different ID's", async function () {
+  // });
   
   it("Parachute Tests -- rescue failed update", async function () {
 
