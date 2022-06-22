@@ -108,37 +108,25 @@ contract NewTransition is TellorStorage, TellorVars {
         view
         returns (uint256, bool)
     {
-        // Try the new contract first
-        uint256 _timeCount = IOracle(addresses[_ORACLE_CONTRACT]).getNewValueCountbyQueryId(bytes32(_requestId));
-        if (_timeCount != 0) {
-            // If timestamps for the ID exist, there is value, so return the value
-            return (
-                retrieveData(
-                    _requestId,
-                    IOracle(addresses[_ORACLE_CONTRACT])
-                        .getReportTimestampByIndex(
-                            bytes32(_requestId),
-                            _timeCount - 1
-                        )
-                ),
-                true
-            );
-        } else {
-            // Else, look at old value + timestamps since mining has not started
-            Request storage _request = requestDetails[_requestId];
-            if (_request.requestTimestamps.length != 0) {
-                return (
-                    retrieveData(
-                        _requestId,
-                        _request.requestTimestamps[
-                            _request.requestTimestamps.length - 1
-                        ]
-                    ),
-                    true
-                );
-            } else {
+        // try new contract first
+        uint256 _latestTimestamp;
+        try IOracle(addresses[_ORACLE_CONTRACT]).getNewValueCountbyQueryId((bytes32(_requestId))) returns(uint256 _timeCount) {
+            if(_timeCount == 0) {
                 return (0, false);
             }
+            _latestTimestamp = IOracle(addresses[_ORACLE_CONTRACT]).getTimestampbyQueryIdandIndex(bytes32(_requestId), _timeCount - 1);
+        } catch {
+            uint256 _timeCount = IOracle(addresses[_ORACLE_CONTRACT]).getTimestampCountById(bytes32(_requestId));
+            if(_timeCount == 0) {
+                return (0, false);
+            }
+            _latestTimestamp = IOracle(addresses[_ORACLE_CONTRACT]).getReportTimestampByIndex(bytes32(_requestId), _timeCount - 1);
+        }
+
+        if(_latestTimestamp > 0) {
+            return (retrieveData(_requestId, _latestTimestamp), true);
+        } else {
+            return (0, false);
         }
     }
 
@@ -178,41 +166,29 @@ contract NewTransition is TellorStorage, TellorVars {
      * @return bool of whether or not the value was successfully retrieved
      */
     function getLastNewValueById(uint256 _requestId)
-        external
+        public
         view
         returns (uint256, bool)
     {
-        // Try the new contract first
-        uint256 _timeCount = IOracle(addresses[_ORACLE_CONTRACT]).getNewValueCountbyQueryId(bytes32(_requestId));
-        if (_timeCount != 0) {
-            // If timestamps for the ID exist, there is value, so return the value
-            return (
-                retrieveData(
-                    _requestId,
-                    IOracle(addresses[_ORACLE_CONTRACT])
-                        .getReportTimestampByIndex(
-                            bytes32(_requestId),
-                            _timeCount - 1
-                        )
-                ),
-                true
-            );
-        } else {
-            // Else, look at old value + timestamps since mining has not started
-            Request storage _request = requestDetails[_requestId];
-            if (_request.requestTimestamps.length != 0) {
-                return (
-                    retrieveData(
-                        _requestId,
-                        _request.requestTimestamps[
-                            _request.requestTimestamps.length - 1
-                        ]
-                    ),
-                    true
-                );
-            } else {
+        // try new contract first
+        uint256 _latestTimestamp;
+        try IOracle(addresses[_ORACLE_CONTRACT]).getNewValueCountbyQueryId((bytes32(_requestId))) returns(uint256 _timeCount) {
+            if(_timeCount == 0) {
                 return (0, false);
             }
+            _latestTimestamp = IOracle(addresses[_ORACLE_CONTRACT]).getTimestampbyQueryIdandIndex(bytes32(_requestId), _timeCount - 1);
+        } catch {
+            uint256 _timeCount = IOracle(addresses[_ORACLE_CONTRACT]).getTimestampCountById(bytes32(_requestId));
+            if(_timeCount == 0) {
+                return (0, false);
+            }
+            _latestTimestamp = IOracle(addresses[_ORACLE_CONTRACT]).getReportTimestampByIndex(bytes32(_requestId), _timeCount - 1);
+        }
+
+        if(_latestTimestamp > 0) {
+            return (retrieveData(_requestId, _latestTimestamp), true);
+        } else {
+            return (0, false);
         }
     }
 
@@ -249,15 +225,10 @@ contract NewTransition is TellorStorage, TellorVars {
         view
         returns (uint256)
     {
-        // Defaults to new one, but will give old value if new mining has not started
-        uint256 _val = IOracle(addresses[_ORACLE_CONTRACT])
-            .getNewValueCountbyQueryId(bytes32(_requestId));
-        if (_val > 0) {
-            console.log("value count from new oracle", _val);
-            return _val;
-        } else {
-            console.log("value count from old oracle", _val);
-            return requestDetails[_requestId].requestTimestamps.length;
+        try IOracle(addresses[_ORACLE_CONTRACT]).getNewValueCountbyQueryId(bytes32(_requestId)) returns(uint256 _valueCount) {
+            return _valueCount;
+        } catch {
+            return IOracle(addresses[_ORACLE_CONTRACT]).getTimestampCountById(bytes32(_requestId));
         }
     }
 
@@ -272,7 +243,6 @@ contract NewTransition is TellorStorage, TellorVars {
         view
         returns (uint256)
     {
-        // Try new contract first, but give old timestamp if new mining has not started
         try
             IOracle(addresses[_ORACLE_CONTRACT]).getTimestampbyQueryIdandIndex(
                 bytes32(_requestId),
@@ -282,7 +252,10 @@ contract NewTransition is TellorStorage, TellorVars {
             console.log("new oracle timestamp", _val);
             return _val;
         } catch {
-            return requestDetails[_requestId].requestTimestamps[_index];
+            return IOracle(addresses[_ORACLE_CONTRACT]).getReportTimestampByIndex(
+                bytes32(_requestId),
+                _index
+            );
         }
     }
 
@@ -324,22 +297,12 @@ contract NewTransition is TellorStorage, TellorVars {
         view
         returns (uint256)
     {
-        if (_timestamp < uints[_SWITCH_TIME]) {
-            return requestDetails[_requestId].finalValues[_timestamp];
+        try IOracle(addresses[_ORACLE_CONTRACT]).retrieveData(bytes32(_requestId), _timestamp) returns(bytes memory _val) {
+            return _sliceUint(_val);
+        } catch {
+            bytes memory _val = IOracle(addresses[_ORACLE_CONTRACT]).getValueByTimestamp(bytes32(_requestId), _timestamp);
+            return _sliceUint(_val);
         }
-        console.log("value retrieved: ",             _sliceUint(
-                IOracle(addresses[_ORACLE_CONTRACT]).retrieveData(
-                    bytes32(_requestId),
-                    _timestamp
-                )
-            ));
-        return
-            _sliceUint(
-                IOracle(addresses[_ORACLE_CONTRACT]).retrieveData(
-                    bytes32(_requestId),
-                    _timestamp
-                )
-            );
     }
 
     /**
@@ -354,6 +317,7 @@ contract NewTransition is TellorStorage, TellorVars {
      * @return uint256 total supply
      */
     function totalSupply() external view returns (uint256) {
+        console.log("here's the total supply");
         return uints[_TOTAL_SUPPLY];
     }
 
