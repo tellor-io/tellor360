@@ -3,28 +3,20 @@ pragma solidity 0.8.3;
 
 import "./BaseToken.sol";
 import "./NewTransition.sol";
+import "hardhat/console.sol";
 
 contract Tellor360 is BaseToken, NewTransition{
     // Events
     event NewContractAddress(address _newContract, string _contractName);
     event NewOracleAddress(address _newOracle, uint256 timestamp);
-
-    /**
-     * @dev Use this to set the owner that will be able to run the init function, 
-     * receive the team's tokens and tranferOutOfContract tokens mistakenly sent to it
-     * @param _multis is the team's multis
-     */
-    constructor(address _multis) {
-        addresses[_OWNER] = _multis;
-    }
     
     // Functions
-    //BL--??? should this be _flexAddress or TellorX address? tellor flex is not on mainnet
     /**
      * @dev Use this function to initiate the contract
      * @param _flexAddress is the contract address that will be deprecated by this contract
      */
     function init(address _flexAddress) external {
+        console.log("@in init");
         require(msg.sender == addresses[_OWNER], "only owner");
         require(uints[keccak256("_INIT")] == 0, "should only happen once");
         uints[keccak256("_INIT")] = 1;
@@ -35,11 +27,14 @@ contract Tellor360 is BaseToken, NewTransition{
        //old tellorx id 1 value has to be 12 hours old before we can init 360
         uint256 _id = 1;
         uint256 _firstTimestamp = IOracle(_flexAddress).getTimestampbyQueryIdandIndex(bytes32(_id),0);
+        console.log("_firstTimestamp: %s", _firstTimestamp);
         require(block.timestamp - _firstTimestamp >= 12 hours, "contract should be at least 12 hours old");
+        addresses[keccak256("_OLD_ORACLE_CONTRACT")] = addresses[_ORACLE_CONTRACT];
         addresses[_ORACLE_CONTRACT] = _flexAddress; //used by Liquity+AMPL for this contract's reads
         //init minting uints (timestamps)
         uints[keccak256("_LAST_RELEASE_TIME_TEAM")] = block.timestamp;
         uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
+        uints[_SWITCH_TIME] = block.timestamp;
         //mint a few people some tokens (those locked)- These addresses accidentally sent TRB to the
         //oracle contract and are being reimbursed with this mint--BL
         //triple check: https://docs.google.com/spreadsheets/d/1z1GO_9cWRBbWxq651Z7FLoA6iI1nWE4lEHB9OPrZjko/edit#gid=0
@@ -85,7 +80,7 @@ contract Tellor360 is BaseToken, NewTransition{
      * @dev Use this function to update the oracle contract
      */
     function updateOracleAddress() external {
-        bytes32 _queryID = keccak256(abi.encode("TellorOracleAddress"));
+        bytes32 _queryID = keccak256(abi.encode("TellorOracleAddress", abi.encode(bytes(""))));
         bytes memory _currentOracleAddress;
         _currentOracleAddress = IOracle(addresses[_ORACLE_CONTRACT]).retrieveData(_queryID, block.timestamp - 12 hours);
         address _currentOracle = abi.decode(_currentOracleAddress,(address));
@@ -96,7 +91,9 @@ contract Tellor360 is BaseToken, NewTransition{
             require(block.timestamp > uints[keccak256("_TIME_PROPOSED_UPDATED")] + 7 days);
             uint256 _firstTimestamp = IOracle(_currentOracle).getTimestampbyQueryIdandIndex(bytes32(uint256(1)),0);
             require(block.timestamp - _firstTimestamp >= 12 hours, "contract should be at least 12 hours old");
+            addresses[keccak256("_OLD_ORACLE_CONTRACT")] = addresses[_ORACLE_CONTRACT];
             addresses[_ORACLE_CONTRACT] = _currentOracle;
+            uints[_SWITCH_TIME] = block.timestamp;
             emit NewOracleAddress(_currentOracle, block.timestamp);
         }
         //Otherwise if the current oracle is not the proposed oracle, then propose it and 
