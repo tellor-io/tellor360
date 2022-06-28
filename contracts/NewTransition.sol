@@ -36,68 +36,8 @@ contract NewTransition is TellorStorage, TellorVars {
         return addresses[_data];
     }
 
+    // May be able to remove -TK
     /**
-     * @dev Gets all dispute variables
-     * @param _disputeId to look up
-     * @return bytes32 hash of dispute
-     * bool executed where true if it has been voted on
-     * bool disputeVotePassed
-     * bool isPropFork true if the dispute is a proposed fork
-     * address of reportedMiner
-     * address of reportingParty
-     * address of proposedForkAddress
-     * uint256 of requestId
-     * uint256 of timestamp
-     * uint256 of value
-     * uint256 of minExecutionDate
-     * uint256 of numberOfVotes
-     * uint256 of blocknumber
-     * uint256 of minerSlot
-     * uint256 of quorum
-     * uint256 of fee
-     * int256 count of the current tally
-     */
-    function getAllDisputeVars(uint256 _disputeId)
-        external
-        view
-        returns (
-            bytes32,
-            bool,
-            bool,
-            bool,
-            address,
-            address,
-            address,
-            uint256[9] memory,
-            int256
-        )
-    {
-        Dispute storage disp = disputesById[_disputeId];
-        return (
-            disp.hash,
-            disp.executed,
-            disp.disputeVotePassed,
-            disp.isPropFork,
-            disp.reportedMiner,
-            disp.reportingParty,
-            disp.proposedForkAddress,
-            [
-                disp.disputeUintVars[_REQUEST_ID],
-                disp.disputeUintVars[_TIMESTAMP],
-                disp.disputeUintVars[_VALUE],
-                disp.disputeUintVars[_MIN_EXECUTION_DATE],
-                disp.disputeUintVars[_NUM_OF_VOTES],
-                disp.disputeUintVars[_BLOCK_NUMBER],
-                disp.disputeUintVars[_MINER_SLOT],
-                disp.disputeUintVars[keccak256("quorum")],
-                disp.disputeUintVars[_FEE]
-            ],
-            disp.tally
-        );
-    }
-
-
-/**
      * @dev Returns the latest value for a specific request ID.
      * @param _requestId the requestId to look up
      * @return uint256 of the value of the latest value of the request ID
@@ -108,55 +48,7 @@ contract NewTransition is TellorStorage, TellorVars {
         view
         returns (uint256, bool)
     {
-        // try new contract first
-        uint256 _latestTimestamp;
-        try IOracle(addresses[_ORACLE_CONTRACT]).getNewValueCountbyQueryId((bytes32(_requestId))) returns(uint256 _timeCount) {
-            if(_timeCount == 0) {
-                return (0, false);
-            }
-            _latestTimestamp = IOracle(addresses[_ORACLE_CONTRACT]).getTimestampbyQueryIdandIndex(bytes32(_requestId), _timeCount - 1);
-        } catch {
-            uint256 _timeCount = IOracle(addresses[_ORACLE_CONTRACT]).getTimestampCountById(bytes32(_requestId));
-            if(_timeCount == 0) {
-                return (0, false);
-            }
-            _latestTimestamp = IOracle(addresses[_ORACLE_CONTRACT]).getReportTimestampByIndex(bytes32(_requestId), _timeCount - 1);
-        }
-
-        if(_latestTimestamp > 0) {
-            return (retrieveData(_requestId, _latestTimestamp), true);
-        } else {
-            return (0, false);
-        }
-    }
-
-    /**
-     * @dev Gets id if a given hash has been disputed
-     * @param _hash is the sha256(abi.encodePacked(_miners[2],_requestId,_timestamp));
-     * @return uint256 disputeId
-     */
-    function getDisputeIdByDisputeHash(bytes32 _hash)
-        external
-        view
-        returns (uint256)
-    {
-        return disputeIdByDisputeHash[_hash];
-    }
-
-    /**
-     * @dev Checks for uint variables in the disputeUintVars mapping based on the disputeId
-     * @param _disputeId is the dispute id;
-     * @param _data the variable to pull from the mapping. _data = keccak256("variable_name") where variable_name is
-     * the variables/strings used to save the data in the mapping. The variables names are
-     * commented out under the disputeUintVars under the Dispute struct
-     * @return uint256 value for the bytes32 data submitted
-     */
-    function getDisputeUintVars(uint256 _disputeId, bytes32 _data)
-        external
-        view
-        returns (uint256)
-    {
-        return disputesById[_disputeId].disputeUintVars[_data];
+        return getLastNewValueById(_requestId);
     }
 
     /**
@@ -190,29 +82,6 @@ contract NewTransition is TellorStorage, TellorVars {
         } else {
             return (0, false);
         }
-    }
-
-    /**
-     * @dev Function is solely for the parachute contract
-     */
-    function getNewCurrentVariables()
-        external
-        view
-        returns (
-            bytes32 _c,
-            uint256[5] memory _r,
-            uint256 _diff,
-            uint256 _tip
-        )
-    {
-        _r = [uint256(1), uint256(1), uint256(1), uint256(1), uint256(1)];
-        _diff = 0;
-        _tip = 0;
-        _c = keccak256(
-            abi.encode(
-                IOracle(addresses[_ORACLE_CONTRACT]).getTimeOfLastNewValue()
-            )
-        );
     }
 
     /**

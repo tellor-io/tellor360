@@ -2,6 +2,7 @@
 pragma solidity 0.8.3;
 
 import "./interfaces/IERC20.sol";
+import "hardhat/console.sol";
 
 /**
  @author Tellor Inc.
@@ -491,6 +492,7 @@ contract TellorFlex {
         view
         returns (uint256)
     {
+        console.log("in getTimestampbyQueryIdandIndex");
         return reports[_queryId].timestamps[_index];
     }
 

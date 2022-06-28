@@ -100,7 +100,7 @@ describe("End-to-End Tests - ", function() {
     console.log(2)
 
     controllerFactory = await ethers.getContractFactory("Test360")
-    controller = await controllerFactory.deploy(DEV_WALLET)
+    controller = await controllerFactory.deploy()
     await controller.deployed()
     console.log(3)
 
@@ -164,33 +164,59 @@ describe("End-to-End Tests - ", function() {
   })
 
   it("Manually verify that Liquity still work (mainnet fork their state after oracle updates)", async function() {
+    // await tellor.connect(devWallet).init(oracle.address)
+
     let liquityPriceFeed = await ethers.getContractAt("contracts/testing/IPriceFeed.sol:IPriceFeed", LIQUITY_PRICE_FEED)
     console.log(1)
     await liquityPriceFeed.fetchPrice()
     lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
 
+
     expect(lastGoodPrice).to.equal("2075224047850000000000", "Liquity ether price should be correct")
     await h.advanceTime(60*60*24*7)
     await tellor.connect(bigWallet).transfer(accounts[10].address, BigInt(100E18))
     await tellor.connect(accounts[10]).approve(oracle.address, BigInt(10E18))
-
     await oracle.connect(accounts[10]).depositStake(BigInt(10E18))
     console.log(h.uintTob32("1"))
     await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("2095150000"),0,'0x')
+    currentVal = await tellor.getLastNewValueById(1)
+    console.log("currentValA: " + currentVal[1])
     console.log( await liquityPriceFeed.tellorCaller())
     await liquityPriceFeed.fetchPrice()
     lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
-    expect(lastGoodPrice).to.eq("2095224047850000000000", "Liquity ether price should be correct")
+    // expect(lastGoodPrice).to.eq("2095224047850000000000", "Liquity ether price should be correct")
     await h.advanceTime(60*60*12)
-    await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395160000"),1,'0x')
+    await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395160000"),0,'0x')
+    currentVal = await tellor.getCurrentValue(1)
+    console.log("currentValB: " + currentVal[1])
     await liquityPriceFeed.fetchPrice()
     lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
-    assert(lastGoodPrice == "3395160000000000000000", "Liquity ether price should be correct")
-    await h.advanceTime(60*60*12)
-    await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395170000"),2,'0x')
-    await liquityPriceFeed.fetchPrice()
-    lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
-    assert(lastGoodPrice == "3395170000000000000000", "Liquity ether price should be correct")
+    expect(lastGoodPrice).to.eq("3395160000000000000000", "Liquity ether price should be correct")
+    // await h.advanceTime(60*60*12)
+    // await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395170000"),2,'0x')
+    // await liquityPriceFeed.fetchPrice()
+    // lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
+    // assert(lastGoodPrice == "3395170000000000000000", "Liquity ether price should be correct")
+  });
+
+  it("My Test", async function() {
+    totalSupply = await tellor.totalSupply()
+    console.log("totalSupply: " + totalSupply)
+    // newValCount = await tellor.getNewValueCountbyRequestId(1)
+    // console.log("newValCount: " + newValCount)
+
+    await tellor.connect(devWallet).init(oracle.address)
+
+    totalSupply = await tellor.totalSupply()
+    console.log("totalSupply: " + totalSupply)
+    newValCount = await tellor.getNewValueCountbyRequestId(1)
+    console.log("newValCount: " + newValCount)
+
+    await tellor.connect(bigWallet).transfer(accounts[10].address, BigInt(100E18))
+    await tellor.connect(accounts[10]).approve(oracle.address, BigInt(10E18))
+    await oracle.connect(accounts[10]).depositStake(BigInt(10E18))
+    await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("2095150000"),0,'0x')
+    // currentVal = await tellor.getLastNewValueById(1)
   });
 
   it("disputes on tellorx work for first 12 hours", async function () {

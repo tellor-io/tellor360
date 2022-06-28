@@ -8,7 +8,11 @@ import "hardhat/console.sol";
 contract Tellor360 is BaseToken, NewTransition{
     // Events
     event NewContractAddress(address _newContract, string _contractName);
-    event NewOracleAddress(address _newOracle, uint256 timestamp);
+    event NewOracleAddress(address _newOracle, uint256 _timestamp);
+    event NewProposedOracleAddress(address _newProposedOracle, uint256 _timestamp);
+
+    // NOTE: Test whether during transition but before init, reporters can submit (bad) values to tellorX and immediately 
+    // transfer their TRB to another address - TK
     
     // Functions
     /**
@@ -27,7 +31,6 @@ contract Tellor360 is BaseToken, NewTransition{
        //old tellorx id 1 value has to be 12 hours old before we can init 360
         uint256 _id = 1;
         uint256 _firstTimestamp = IOracle(_flexAddress).getTimestampbyQueryIdandIndex(bytes32(_id),0);
-        console.log("_firstTimestamp: %s", _firstTimestamp);
         require(block.timestamp - _firstTimestamp >= 12 hours, "contract should be at least 12 hours old");
         addresses[keccak256("_OLD_ORACLE_CONTRACT")] = addresses[_ORACLE_CONTRACT];
         addresses[_ORACLE_CONTRACT] = _flexAddress; //used by Liquity+AMPL for this contract's reads
@@ -84,9 +87,9 @@ contract Tellor360 is BaseToken, NewTransition{
         bytes memory _currentOracleAddress;
         _currentOracleAddress = IOracle(addresses[_ORACLE_CONTRACT]).retrieveData(_queryID, block.timestamp - 12 hours);
         address _currentOracle = abi.decode(_currentOracleAddress,(address));
-        //If the oracle address being reported is the same as the proposed oracle then update the oracle contract 
-        //only if 7 days have passed since the new oracle address was made official
-        //and if 12 hours have passed since query id 1 was last reported on the soon to be deprecated oracle contract
+        // If the oracle address being reported is the same as the proposed oracle then update the oracle contract 
+        // only if 7 days have passed since the new oracle address was made official
+        // and if 12 hours have passed since query id 1 was last reported on the soon to be deprecated oracle contract
         if(_currentOracle == addresses[keccak256("_PROPOSED_ORACLE")]){
             require(block.timestamp > uints[keccak256("_TIME_PROPOSED_UPDATED")] + 7 days);
             uint256 _firstTimestamp = IOracle(_currentOracle).getTimestampbyQueryIdandIndex(bytes32(uint256(1)),0);
@@ -102,6 +105,7 @@ contract Tellor360 is BaseToken, NewTransition{
             require(_isValid(_currentOracle));
             addresses[keccak256("_PROPOSED_ORACLE")] = _currentOracle;
             uints[keccak256("_TIME_PROPOSED_UPDATED")] = block.timestamp;
+            emit NewProposedOracleAddress(_currentOracle, block.timestamp);
         }
     }
 
