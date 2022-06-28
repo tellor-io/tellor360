@@ -53,6 +53,8 @@ interface ITellor{
     function getNewValueCountbyQueryId(bytes32 _queryId) external view returns(uint256);
     function getTimestampbyQueryIdandIndex(bytes32 _queryId, uint256 _index) external view returns(uint256);
     function retrieveData(bytes32 _queryId, uint256 _timestamp) external view returns(bytes memory);
+    function updateOracleAddress() external;
+    function isValid(address _contract) external returns(bool);
     //Governance
     enum VoteResult {FAILED,PASSED,INVALID}
     function setApprovedFunction(bytes4 _func, bool _val) external;

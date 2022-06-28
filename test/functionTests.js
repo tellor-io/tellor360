@@ -3,8 +3,9 @@ const { expect } = require("chai");
 const h = require("./helpers/helpers");
 var assert = require('assert');
 const web3 = require('web3');
+const { ethers } = require("hardhat");
 
-describe("Function Tests", function() {
+describe("Function Tests - Tellor360", function() {
 
   const tellorMaster = "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0"
   const DEV_WALLET = "0x39E419bA25196794B595B2a595Ea8E527ddC9856"
@@ -20,10 +21,12 @@ describe("Function Tests", function() {
   let token = null
   let oracle = null
   let tellor = null
+  let newGovernance = null
   let governance = null
   let cfac,ofac,tfac,gfac,parachute,govBig,govTeam
   let govSigner = null
   let devWallet = null
+  let abiCoder = new ethers.utils.AbiCoder
 
   beforeEach("deploy and setup Tellor360", async function() {
 
@@ -75,8 +78,15 @@ describe("Function Tests", function() {
     await token.deployed()
 
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    oracle = await oracleFactory.deploy(tellorMaster, BIGWALLET, BigInt(10E18), 12*60*60)
+    // oracle = await oracleFactory.deploy(tellorMaster, BIGWALLET, BigInt(10E18), 12*60*60)
+    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
     await oracle.deployed()
+
+    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
+    newGovernance = await governanceFactory.deploy(oracle.address, BigInt(1e18), DEV_WALLET)
+    await newGovernance.deployed()
+
+    await oracle.init(newGovernance.address)
 
     await tellor.connect(devWallet).transfer(accounts[1].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[1]).approve(oracle.address, BigInt(10E18))
@@ -100,7 +110,7 @@ describe("Function Tests", function() {
 
 
     controllerFactory = await ethers.getContractFactory("Test360")
-    controller = await controllerFactory.deploy(DEV_WALLET)
+    controller = await controllerFactory.deploy()
     await controller.deployed()
 
     let controllerAddressEncoded = ethers.utils.defaultAbiCoder.encode([ "address" ],[controller.address])
@@ -118,7 +128,7 @@ describe("Function Tests", function() {
     await governance.executeVote(voteCount)
   });
 
-  it("Init()", async function () {
+  it("init()", async function () {
     let refundedAccount = "0x3aa39f73D48739CDBeCD9EB788D4657E0d6a6815"
     let oldBalance = await tellor.balanceOf(refundedAccount)
 
@@ -130,9 +140,16 @@ describe("Function Tests", function() {
   
     //require 3: tellorflex must have values at least 12 hours old (redeploy flex!)
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    oracle = await oracleFactory.deploy(tellorMaster, BIGWALLET, BigInt(10E18), 12*60*60)
+    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
     await oracle.deployed()
 
+    // deploy new governance
+    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
+    newGovernance2 = await governanceFactory.deploy(oracle.address, BigInt(1e18), DEV_WALLET)
+    await newGovernance2.deployed()
+
+    await oracle.init(newGovernance2.address)
+    
     await expect(
       tellor.connect(devWallet).init(oracle.address),
       "was able to init tellor360 with empty tellorflex"
@@ -167,72 +184,132 @@ describe("Function Tests", function() {
   })
 
   it("mintToTeam()", async function () {
-console.log(1)
    //fast forward 12 hours
     h.advanceTime(60*60*12)
     await tellor.connect(devWallet).init(oracle.address)
-    console.log(2)
     //get _OWNER account address
     let owner = await tellor.getAddressVars(h.hash("_OWNER"))
     expect(owner).to.equal(DEV_WALLET)
-    console.log(3)
     //get _OWNER contract balance
     let oldBalance = BigInt(await tellor.balanceOf(owner))
-    console.log("oldBalance",oldBalance)
     //fast forward one day
-    h.advanceTime(86400)
-    console.log(5)
+    h.advanceTime(86399)
     //mint
     await tellor.mintToTeam()
-    console.log(6)
     //_OWNER balance should be greater by 131.5 tokens
     let newBalance = BigInt(await tellor.balanceOf(owner))
-    console.log("newBalance", newBalance)
     expect(newBalance).to.equal(oldBalance + BigInt(1315E17))
-    console.log(8)
   })
 
   it("mintToOracle()", async function () {
-
-       //fast forward 12 hours
-       h.advanceTime(60*60*12)
-console.log(11)
+    //fast forward 12 hours
+    h.advanceTime(60*60*12)
     await tellor.connect(devWallet).init(oracle.address)
-    console.log(12)
-    //get _ORACLE_CONTRACT account address
-    let oracle = await tellor.getAddressVars(h.hash("_ORACLE_CONTRACT"))
-    console.log("oracle", oracle)
     //get _ORACLE_CONTRACT contract balance
-    let oldBalance = BigInt(await tellor.balanceOf(oracle))
-    console.log(13)
+    let oldBalance = BigInt(await tellor.balanceOf(oracle.address))
     //fast forward one day
-    h.advanceTime(86400)
-
+    h.advanceTime(86399)
     //mint
     await tellor.mintToOracle()
-    console.log(14)
     //_ORACLE_CONTRACT balance should be greater by 131.5 tokens
-    let newBalance = BigInt(await tellor.balanceOf(oracle))
-    console.log(15)
+    let newBalance = BigInt(await tellor.balanceOf(oracle.address))
     expect(newBalance).to.equal(oldBalance + BigInt(1315E17))
-    console.log(16)
   });
 
-  // it("transferOutOfContract()", async function () {
-  //   await tellor.connect(devWallet).init(oracle.address)
+  it("transferOutOfContract()", async function () {
+    await tellor.connect(devWallet).init(oracle.address)
 
-  //   let oldTellorBalance = BigInt(await tellor.balanceOf(tellor.address))
-  //   let oldMultisBalance = BigInt(await tellor.balanceOf(DEV_WALLET))
+    let oldTellorBalance = BigInt(await tellor.balanceOf(tellor.address))
+    let oldMultisBalance = BigInt(await tellor.balanceOf(DEV_WALLET))
 
-  //   //transfer tokens from contract to multis
-  //   await tellor.transferOutOfContract()
+    //transfer tokens from contract to multis
+    await tellor.transferOutOfContract()
 
-  //   //read new balance of multis
-  //   let newTellorBalance = BigInt(await tellor.balanceOf(tellor.address))
-  //   let newMultisBalance = BigInt(await tellor.balanceOf(DEV_WALLET))
+    //read new balance of multis
+    let newTellorBalance = BigInt(await tellor.balanceOf(tellor.address))
+    let newMultisBalance = BigInt(await tellor.balanceOf(DEV_WALLET))
 
-  //   expect(newTellorBalance).to.be.equal(BigInt(0))
-  //   expect(newMultisBalance).to.be.equal(oldMultisBalance + oldTellorBalance)
-  // });
+    expect(newTellorBalance).to.be.equal(BigInt(0))
+    expect(newMultisBalance).to.be.equal(oldMultisBalance + oldTellorBalance)
 
+    await h.advanceTime(86400 * 30)
+    // make sure can't call and mint new tokens
+    await h.expectThrow(tellor.transferOutOfContract()) // no tokens at master address
+    let newMultisBalance2 = BigInt(await tellor.balanceOf(DEV_WALLET))
+    expect(newMultisBalance2).to.be.equal(newMultisBalance) 
+
+    await tellor.connect(devWallet).transfer(tellor.address, newMultisBalance)
+    expect(await tellor.balanceOf(tellor.address)).to.equal(newMultisBalance)
+    expect(await tellor.balanceOf(DEV_WALLET)).to.equal(0)
+
+    //transfer tokens from contract to multis
+    await tellor.transferOutOfContract()
+    expect(await tellor.balanceOf(tellor.address)).to.equal(0)
+    expect(await tellor.balanceOf(DEV_WALLET)).to.equal(newMultisBalance)
+  });
+
+  it("updateOracleAddress()", async function () {
+    await tellor.connect(devWallet).init(oracle.address)
+
+    // deploy new oracle
+    let oracleFactory = await ethers.getContractFactory("TellorFlex")
+    newOracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
+    await newOracle.deployed()
+
+    // deploy new governance
+    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
+    newGovernance2 = await governanceFactory.deploy(oracle.address, BigInt(1e18), DEV_WALLET)
+    await newGovernance2.deployed()
+
+    await newOracle.init(newGovernance2.address)
+
+    expect(await tellor.getAddressVars(h.hash("_PROPOSED_ORACLE"))).to.equal('0x0000000000000000000000000000000000000000')
+    expect(await tellor.getUintVar(h.hash("_TIME_PROPOSED_UPDATED"))).to.equal(0)
+
+    await h.expectThrow(tellor.updateOracleAddress()) // no address submitted to oracle
+
+    // TellorOracleAddress query type params
+    oracleQueryDataPartial = abiCoder.encode(['bytes'], ['0x'])
+    oracleQueryData = abiCoder.encode(['string', 'bytes'], ['TellorOracleAddress', oracleQueryDataPartial])
+    oracleQueryId = ethers.utils.keccak256(oracleQueryData) // 0xcf0c5863be1cf3b948a9ff43290f931399765d051a60c3b23a4e098148b1f707
+    newOracleAddressEncoded = abiCoder.encode(['address'], [newOracle.address])
+
+    await oracle.connect(accounts[1]).submitValue(oracleQueryId, newOracleAddressEncoded, 0, oracleQueryData)
+    await h.advanceTime(86400/2)
+    await tellor.updateOracleAddress()
+    blockyProposedUpdate = await h.getBlock()
+
+    expect(await tellor.getAddressVars(h.hash("_PROPOSED_ORACLE"))).to.equal(newOracle.address)
+    expect(await tellor.getUintVar(h.hash("_TIME_PROPOSED_UPDATED"))).to.equal(blockyProposedUpdate.timestamp)
+
+    await h.expectThrow(tellor.updateOracleAddress()) // 7 days have not passed since proposed
+
+    await h.advanceTime(86400 * 7)
+
+    await h.expectThrow(tellor.updateOracleAddress()) // 1st new oracle value must be 12+ hours old
+
+    await tellor.connect(accounts[1]).approve(newOracle.address, BigInt(10E18))
+    await newOracle.connect(accounts[1]).depositStake(BigInt(10E18))
+    await newOracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+
+    await h.expectThrow(tellor.updateOracleAddress()) // 1st new oracle value must be 12+ hours old
+    
+    await h.advanceTime(86400/2)
+
+    expect(await tellor.getAddressVars(h.hash("_ORACLE_CONTRACT"))).to.equal(oracle.address)
+    await tellor.updateOracleAddress()
+    blockySwitchTime = await h.getBlock()
+
+    expect(await tellor.getAddressVars(h.hash("_ORACLE_CONTRACT"))).to.equal(newOracle.address)
+    expect(await tellor.getUintVar(h.hash("_SWITCH_TIME"))).to.equal(blockySwitchTime.timestamp)
+  });
+
+  it("verify()", async function () {
+    expect(await tellor.verify()).to.equal(9999)
+  })
+
+  it("_isValid()", async function () {
+    await tellor.isValid(oracle.address)
+    await h.expectThrow(tellor.isValid(accounts[1].address)) // not a valid tellor contract
+  })  
 })

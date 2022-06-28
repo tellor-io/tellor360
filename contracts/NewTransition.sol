@@ -36,21 +36,6 @@ contract NewTransition is TellorStorage, TellorVars {
         return addresses[_data];
     }
 
-    // May be able to remove -TK
-    /**
-     * @dev Returns the latest value for a specific request ID.
-     * @param _requestId the requestId to look up
-     * @return uint256 of the value of the latest value of the request ID
-     * @return bool of whether or not the value was successfully retrieved
-     */
-    function getCurrentValue(uint256 _requestId)
-        external
-        view
-        returns (uint256, bool)
-    {
-        return getLastNewValueById(_requestId);
-    }
-
     /**
      * @dev Returns the latest value for a specific request ID.
      * @param _requestId the requestId to look up
@@ -121,6 +106,7 @@ contract NewTransition is TellorStorage, TellorVars {
             console.log("new oracle timestamp", _val);
             return _val;
         } catch {
+            console.log("old oracle timestamp");
             return IOracle(addresses[_ORACLE_CONTRACT]).getReportTimestampByIndex(
                 bytes32(_requestId),
                 _index

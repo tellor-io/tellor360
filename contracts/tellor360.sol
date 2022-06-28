@@ -20,7 +20,6 @@ contract Tellor360 is BaseToken, NewTransition{
      * @param _flexAddress is the contract address that will be deprecated by this contract
      */
     function init(address _flexAddress) external {
-        console.log("@in init");
         require(msg.sender == addresses[_OWNER], "only owner");
         require(uints[keccak256("_INIT")] == 0, "should only happen once");
         uints[keccak256("_INIT")] = 1;
@@ -65,8 +64,8 @@ contract Tellor360 is BaseToken, NewTransition{
     function mintToOracle() external{
         require(uints[keccak256("_INIT")] == 1, "tellor360 not initiated");
         //yearly is 4k * 12 mos = 48k per year (131.5 per day)
-        uint256 _releasedAmount = 131.5 ether * (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_ORACLE")])/(86400); 
-        uints[keccak256("_LAST_RELEASE_TIME_ORACLE")] = block.timestamp;
+        uint256 _releasedAmount = 131.5 ether * (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_DAO")])/(86400); 
+        uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
         _doMint(addresses[_ORACLE_CONTRACT], _releasedAmount);
     }
 
@@ -85,7 +84,7 @@ contract Tellor360 is BaseToken, NewTransition{
     function updateOracleAddress() external {
         bytes32 _queryID = keccak256(abi.encode("TellorOracleAddress", abi.encode(bytes(""))));
         bytes memory _currentOracleAddress;
-        _currentOracleAddress = IOracle(addresses[_ORACLE_CONTRACT]).retrieveData(_queryID, block.timestamp - 12 hours);
+        (, _currentOracleAddress, ) = IOracle(addresses[_ORACLE_CONTRACT]).getDataBefore(_queryID, block.timestamp - 12 hours);
         address _currentOracle = abi.decode(_currentOracleAddress,(address));
         // If the oracle address being reported is the same as the proposed oracle then update the oracle contract 
         // only if 7 days have passed since the new oracle address was made official
