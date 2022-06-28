@@ -103,10 +103,8 @@ contract NewTransition is TellorStorage, TellorVars {
                 _index
             )
         returns (uint256 _val) {
-            console.log("new oracle timestamp", _val);
             return _val;
         } catch {
-            console.log("old oracle timestamp");
             return IOracle(addresses[_ORACLE_CONTRACT]).getReportTimestampByIndex(
                 bytes32(_requestId),
                 _index
@@ -172,7 +170,6 @@ contract NewTransition is TellorStorage, TellorVars {
      * @return uint256 total supply
      */
     function totalSupply() external view returns (uint256) {
-        console.log("here's the total supply");
         return uints[_TOTAL_SUPPLY];
     }
 
