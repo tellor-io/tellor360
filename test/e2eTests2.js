@@ -70,8 +70,14 @@ describe("End-to-End Tests - Two", function() {
     parachute = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor",PARACHUTE, devWallet);
 
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    oracle = await oracleFactory.deploy(tellorMaster, BIGWALLET, BigInt(10E18), 12*60*60)
+    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
     await oracle.deployed()
+
+    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
+    newGovernance = await governanceFactory.deploy(oracle.address, BigInt(1e18), DEV_WALLET)
+    await newGovernance.deployed()
+
+    await oracle.init(newGovernance.address)
 
     await tellor.connect(devWallet).transfer(accounts[1].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[1]).approve(oracle.address, BigInt(10E18))
@@ -96,7 +102,7 @@ describe("End-to-End Tests - Two", function() {
 
 
     controllerFactory = await ethers.getContractFactory("Test360")
-    controller = await controllerFactory.deploy(DEV_WALLET)
+    controller = await controllerFactory.deploy()
     await controller.deployed()
 
     let controllerAddressEncoded = ethers.utils.defaultAbiCoder.encode([ "address" ],[controller.address])
@@ -136,7 +142,6 @@ describe("End-to-End Tests - Two", function() {
     expect(expectedBalance).to.be.equal(oldStakerBalance - tokensTransfered)
 
     //init tellorflex!
-
     await tellor.connect(devWallet).init(oracle.address)
 
     //they can now stake again in tellorflex
@@ -154,9 +159,6 @@ describe("End-to-End Tests - Two", function() {
     let amountStaked = stakerInfo[1]
 
     expect(amountStaked).to.equal(BigInt(stake))
-
-
-
   })
 
 });
