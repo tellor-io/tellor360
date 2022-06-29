@@ -6,7 +6,7 @@ var assert = require('assert');
 const web3 = require('web3');
 const { BigNumber } = require("ethers");
 
-describe("End-to-End Tests - ", function() {
+describe("End-to-End Tests - Zero", function() {
 
     const tellorMaster = "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0"
     const DEV_WALLET = "0x39E419bA25196794B595B2a595Ea8E527ddC9856"
@@ -25,6 +25,9 @@ describe("End-to-End Tests - ", function() {
     let cfac,ofac,tfac,gfac,parachute,govBig,govTeam
     let govSigner = null
     let devWallet = null
+    let oldOracle
+    let newGovernance = null
+    let voteCount = null
 
   beforeEach("deploy and setup Tellor360", async function () {
 
@@ -74,8 +77,14 @@ describe("End-to-End Tests - ", function() {
     await token.deployed()
   
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    oracle = await oracleFactory.deploy(tellorMaster, BIGWALLET, BigInt(10E18), 12*60*60)
+    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
     await oracle.deployed()
+
+    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
+    newGovernance = await governanceFactory.deploy(oracle.address, DEV_WALLET)
+    await newGovernance.deployed()
+
+    await oracle.init(newGovernance.address)
 
     await tellor.connect(devWallet).transfer(accounts[1].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[1]).approve(oracle.address, BigInt(10E18))
@@ -91,48 +100,58 @@ describe("End-to-End Tests - ", function() {
     await tellor.connect(devWallet).transfer(accounts[3].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[3]).depositStake()
     await oldOracle.connect(accounts[3]).submitValue(h.uintTob32(70), h.bytes(100), 0, '0x')
-    console.log(1)
+
+    // non-disputed reporter
+    await tellor.connect(devWallet).transfer(accounts[4].address, web3.utils.toWei("100"));
+    await tellor.connect(accounts[4]).depositStake()
 
     //disputer 
     await tellor.connect(devWallet).transfer(accounts[4].address, web3.utils.toWei("100"));
     let latestTimestamp = await oldOracle.getTimeOfLastNewValue()
     await governance.connect(accounts[4]).beginDispute(h.uintTob32(70), latestTimestamp)
-    console.log(2)
 
     controllerFactory = await ethers.getContractFactory("Test360")
     controller = await controllerFactory.deploy()
     await controller.deployed()
-    console.log(3)
 
     let controllerAddressEncoded = ethers.utils.defaultAbiCoder.encode([ "address" ],[controller.address])
     await governance.connect(devWallet).proposeVote(tellorMaster, 0x3c46a185, controllerAddressEncoded, 0)
-    console.log(4)
-    let voteCount = await governance.getVoteCount()
-    console.log(5)
+    voteCount = await governance.getVoteCount()
 
     await governance.connect(devWallet).vote(voteCount,true, false)
     await governance.connect(bigWallet).vote(voteCount,true, false)
     await governance.connect(reporter).vote(voteCount, true, false)
-    console.log(6)
 
     await h.advanceTime(86400 * 8)
     await governance.tallyVotes(voteCount)
     await h.advanceTime(86400 * 2.5)
-    await governance.executeVote(voteCount)
-    console.log(7)
-
+    // await governance.executeVote(voteCount)
   });
-  // it("Mine 2 values on 50 different ID's", async function () {
-  // });
-  
-  it("Parachute Tests -- rescue failed update", async function () {
 
+  it("Mine 2 values on 50 different ID's", async function () {
+    // init 360
+    await governance.executeVote(voteCount)
     await tellor.connect(devWallet).init(oracle.address)
 
+    await tellor.connect(bigWallet).transfer(accounts[9].address, BigInt(120E18))
+    await tellor.connect(bigWallet).transfer(accounts[10].address, BigInt(120E18))
+    await tellor.connect(accounts[9]).approve(oracle.address, BigInt(120E18))
+    await tellor.connect(accounts[10]).approve(oracle.address, BigInt(120E18))
+    await oracle.connect(accounts[9]).depositStake(BigInt(120E18))
+    await oracle.connect(accounts[10]).depositStake(BigInt(120E18))
+
+    for (let i=1; i<=50; i++) {
+      await oracle.connect(accounts[9]).submitValue(h.uintTob32(i.toString()), h.uintTob32(i.toString()), 0, '0x')
+      await oracle.connect(accounts[10]).submitValue(h.uintTob32(i.toString()), h.uintTob32(i.toString()), 0, '0x')
+      await h.advanceTime(3600)
+    }
+  });
+  
+  it("Parachute Tests -- rescue failed update", async function () {
+    await governance.executeVote(voteCount)
+    await tellor.connect(devWallet).init(oracle.address)
 
     let tellorContract = '0x0f1293c916694ac6af4daa2f866f0448d0c2ce8847074a7896d397c961914a08'
-
-    console.log(await tellor.getAddressVars(tellorContract))
 
     await expect(
       parachute.rescueFailedUpdate(),
@@ -141,152 +160,111 @@ describe("End-to-End Tests - ", function() {
 
     await tellor.changeAddressVar(h.hash("_TELLOR_CONTRACT"),ethers.constants.AddressZero)
 
-    console.log(0)
-
-    console.log(tellor.address)
-
-    console.log("here")
-
     await expect(
       tellor.verify(),
       "shouldn't be able to read"
     ).to.be.reverted
-    console.log("here2")
     //throw deity to parachute
     await parachute.rescueFailedUpdate()
     //get it back!
-    console.log(1 )
     await tellor.connect(devWallet).changeTellorContract(controller.address)
     //read tellor contract adddres
-    console.log(tellor.address)
     let newAdd = await tellor.getAddressVars(tellorContract)
     await assert(newAdd == controller.address, "Tellor's address was not updated")
+    let newDeity = await tellor.getAddressVars(h.hash("_DEITY"))
+    await assert(newDeity == DEV_WALLET)
   })
 
   it("Manually verify that Liquity still work (mainnet fork their state after oracle updates)", async function() {
-    // await tellor.connect(devWallet).init(oracle.address)
+    await governance.executeVote(voteCount)
+    await tellor.connect(devWallet).init(oracle.address)
 
     let liquityPriceFeed = await ethers.getContractAt("contracts/testing/IPriceFeed.sol:IPriceFeed", LIQUITY_PRICE_FEED)
-    console.log(1)
     await liquityPriceFeed.fetchPrice()
     lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
-
 
     expect(lastGoodPrice).to.equal("2075224047850000000000", "Liquity ether price should be correct")
     await h.advanceTime(60*60*24*7)
+
     await tellor.connect(bigWallet).transfer(accounts[10].address, BigInt(100E18))
     await tellor.connect(accounts[10]).approve(oracle.address, BigInt(10E18))
     await oracle.connect(accounts[10]).depositStake(BigInt(10E18))
-    console.log(h.uintTob32("1"))
     await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("2095150000"),0,'0x')
     currentVal = await tellor.getLastNewValueById(1)
-    console.log("currentValA: " + currentVal[1])
-    console.log( await liquityPriceFeed.tellorCaller())
+    console.log("currentValA: " + currentVal[0])
+    // console.log( await liquityPriceFeed.tellorCaller())
     await liquityPriceFeed.fetchPrice()
     lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
-    // expect(lastGoodPrice).to.eq("2095224047850000000000", "Liquity ether price should be correct")
+    expect(lastGoodPrice).to.eq("2095150000000000000000", "Liquity ether price should be correct")
+
     await h.advanceTime(60*60*12)
     await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395160000"),0,'0x')
-    currentVal = await tellor.getCurrentValue(1)
-    console.log("currentValB: " + currentVal[1])
+    currentVal = await tellor.getLastNewValueById(1)
     await liquityPriceFeed.fetchPrice()
     lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
     expect(lastGoodPrice).to.eq("3395160000000000000000", "Liquity ether price should be correct")
-    // await h.advanceTime(60*60*12)
-    // await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395170000"),2,'0x')
-    // await liquityPriceFeed.fetchPrice()
-    // lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
-    // assert(lastGoodPrice == "3395170000000000000000", "Liquity ether price should be correct")
-  });
-
-  it("My Test", async function() {
-    totalSupply = await tellor.totalSupply()
-    console.log("totalSupply: " + totalSupply)
-    // newValCount = await tellor.getNewValueCountbyRequestId(1)
-    // console.log("newValCount: " + newValCount)
-
-    await tellor.connect(devWallet).init(oracle.address)
-
-    totalSupply = await tellor.totalSupply()
-    console.log("totalSupply: " + totalSupply)
-    newValCount = await tellor.getNewValueCountbyRequestId(1)
-    console.log("newValCount: " + newValCount)
-
-    await tellor.connect(bigWallet).transfer(accounts[10].address, BigInt(100E18))
-    await tellor.connect(accounts[10]).approve(oracle.address, BigInt(10E18))
-    await oracle.connect(accounts[10]).depositStake(BigInt(10E18))
-    await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("2095150000"),0,'0x')
-    // currentVal = await tellor.getLastNewValueById(1)
+    await h.advanceTime(60*60*12)
+    await oracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395170000"),0,'0x')
+    await liquityPriceFeed.fetchPrice()
+    lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
+    assert(lastGoodPrice == "3395170000000000000000", "Liquity ether price should be correct")
   });
 
   it("disputes on tellorx work for first 12 hours", async function () {
-
-    //transfer tokens to account for staking
     await tellor.connect(bigWallet).transfer(accounts[10].address, BigInt(100E18))
 
-    //stake account on tellor master (tellorx oracle)
-    await tellor.connect(accounts[10]).depositStake(BigInt(100E18))
+    // stake account on tellor master (tellorx oracle)
+    await tellor.connect(accounts[10]).depositStake()
 
-    console.log("here")
     //account submits a value
-    await tellorXOracle.connect(accounts[10]).submitValue(h.uintTob32("1"),h.uintTob32("3395170000"),2,'0x')
-
-    //assert value is inaccessible from tellorflex
-    // await oracle.get
+    valueCount = await tellor.getNewValueCountbyRequestId(1)
+    await oldOracle.connect(accounts[10]).submitValue(h.uintTob32("1"), h.uintTob32("3395170000"), valueCount, '0x')
+    blocky = await h.getBlock()
 
     //account disputes their value
-    // await governance
+    await governance.connect(bigWallet).beginDispute(h.uintTob32("1"), blocky.timestamp)
+    newVoteCount = await governance.getVoteCount()
+    await governance.connect(bigWallet).vote(newVoteCount, true, false)
 
+    // init 360
+    await governance.executeVote(voteCount)
+    await tellor.connect(devWallet).init(oracle.address)
   })
 
-  it("stake deposits on tellorflex round down to nearest multiple of 10", async function() {
+  it("can stake and dispute on tellorx within the 12 hours (before init)", async function() {
+    // stake and submit value
+    await tellor.connect(bigWallet).transfer(accounts[10].address, BigInt(100E18))
+    await tellor.connect(accounts[10]).depositStake()
+    await oldOracle.connect(accounts[10]).submitValue(h.uintTob32("99"),h.uintTob32("1500000000"),0,'0x')
+    blocky1 = await h.getBlock()
+    lastNewVal = await tellor.getLastNewValueById(99)
+    expect(lastNewVal[0]).to.equal(h.uintTob32("1500000000"))
 
+    // begin dispute
+    await tellor.connect(bigWallet).transfer(accounts[1].address, BigInt(100E18))
+    await governance.connect(accounts[1]).beginDispute(h.uintTob32("99"), blocky1.timestamp)
+    newVoteCount = governance.getVoteCount()
+    await governance.connect(accounts[1]).vote(newVoteCount, true, false)
 
+    // init 360
+    await governance.executeVote(voteCount)
+    await tellor.connect(devWallet).init(oracle.address)
   })
-
-  // it("can stake and dispute on tellorx within the 12 hours (before init)", async function() {
-
-  //   //
-
-  //   // await tellor.connect(devWallet).init(oracle.address)
-    
-
-  // })
 
   it("stakers on tellorx can withdraw and re-stake on tellorflex", async function() {
+    await tellor.connect(bigWallet).transfer(accounts[10].address, BigInt(100E18))
+    await tellor.connect(accounts[10]).depositStake()
+    await h.expectThrow(tellor.connect(accounts[10]).transfer(accounts[9].address, BigInt(100E18)))
 
-    //this staker has staked in the beforeEach on TellorX
+    // execute upgrade proposal
+    await governance.executeVote(voteCount)
 
-    let oldStakeAmount = BigInt(100E18)
+    // ensure old staker can transfer tokens
+    await tellor.connect(accounts[10]).transfer(accounts[9].address, BigInt(100E18))
+    await tellor.connect(accounts[9]).transfer(accounts[10].address, BigInt(100E18))
 
-    let oldStakerBalance = await tellor.balanceOf(accounts[2].address)
-    
-    expect(oldStakerBalance).to.be.equal(oldStakeAmount)
-
-    //they can send their tokens now; they're unlocked
-
-    let tokensTransfered = BigInt(10E18)
-
-    let expectedBalance = BigInt(90E18)
-
-    await tellor.connect(accounts[2]).transfer(accounts[3].address, tokensTransfered)
-
-    expect(expectedBalance).to.be.equal(tokensTransfered)
-
-    //init tellorflex!
-
-    await tellor.init(oracle.address)
-
-    //they can now stake again in tellorflex
-
-    let stake = BigInt(90E18)
-
-    await tellor.connect(accounts[2]).approve(oracle.address, stake)
-    await oracle.connect(accounts[2]).depositStake(stake)
-
-    console.log(await tellor.balanceOf(accounts[2].address))
-
-
+    // ensure staker can stake in new oracle
+    await tellor.connect(accounts[10]).approve(oracle.address, BigInt(100E18))
+    await oracle.connect(accounts[10]).depositStake(BigInt(100E18))
   })
-
 });
