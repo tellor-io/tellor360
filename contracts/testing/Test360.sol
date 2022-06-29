@@ -7,9 +7,6 @@ import "hardhat/console.sol";
 contract Test360 is Tellor360 {
     event Received(address, uint256);
 
-    constructor(address _multis
-    ) Tellor360(_multis) {}
-
     receive() external payable {
         emit Received(msg.sender, msg.value);
     }
@@ -20,5 +17,13 @@ contract Test360 is Tellor360 {
 
     function sliceUintTest(bytes memory bs) external pure returns (uint256) {
         return _sliceUint(bs);
+    }
+
+    function isValid(address _contract) external returns(bool) {
+        return _isValid(_contract);
+    }
+
+    function doMintTest(address _to, uint256 _amount) external {
+        _doMint(_to, _amount);
     }
 }

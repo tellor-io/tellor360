@@ -21,6 +21,7 @@ interface ITellor{
     function transferOutOfContract() external;
     function init(address _flexAddress) external;
     function getAllDisputeVars(uint256 _disputeId) external view returns (bytes32,bool,bool,bool,address,address,address,uint256[9] memory,int256);
+    function getCurrentValue(uint256 _requestId) external view returns(uint256);
     function getDisputeIdByDisputeHash(bytes32 _hash) external view returns (uint256);
     function getDisputeUintVars(uint256 _disputeId, bytes32 _data) external view returns(uint256);
     function getLastNewValueById(uint256 _requestId) external view returns (uint256, bool);
@@ -52,6 +53,9 @@ interface ITellor{
     function getNewValueCountbyQueryId(bytes32 _queryId) external view returns(uint256);
     function getTimestampbyQueryIdandIndex(bytes32 _queryId, uint256 _index) external view returns(uint256);
     function retrieveData(bytes32 _queryId, uint256 _timestamp) external view returns(bytes memory);
+    function updateOracleAddress() external;
+    function isValid(address _contract) external returns(bool);
+    function _doMint(address _to, uint256 _amount) external; // is actually internal
     //Governance
     enum VoteResult {FAILED,PASSED,INVALID}
     function setApprovedFunction(bytes4 _func, bool _val) external;
@@ -108,6 +112,8 @@ interface ITellor{
     function wasPaid(uint256 _id, address _investor) external view returns(bool);
     //Test functions
     function changeAddressVar(bytes32 _id, address _addy) external;
+    function sliceUintTest(bytes memory _bytes) external pure returns(uint256);
+    function doMintTest(address _to, uint256 _amount) external;
 
     //parachute functions
     function killContract() external;

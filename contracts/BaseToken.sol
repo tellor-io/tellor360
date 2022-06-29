@@ -188,7 +188,9 @@ contract BaseToken is TellorStorage, TellorVars {
         uint256 _amount
     ) internal {
         // Ensure user has a correct balance and to address
-        require(_amount != 0, "Tried to send non-positive amount");
+        if(_amount == 0) {
+            return;
+        }
         require(_to != address(0), "Receiver is 0 address");
         // Update balance of _from address
         uint128 _previousBalance = uint128(balanceOf(_from));

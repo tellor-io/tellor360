@@ -23,6 +23,7 @@ interface IGovernance{
     function getDisputeInfo(uint256 _disputeId) external view returns(uint256,uint256,bytes memory, address);
     function getOpenDisputesOnId(uint256 _queryId) external view returns(uint256);
     function didVote(uint256 _disputeId, address _voter) external view returns(bool);
+    function getVoteTallyByAddress(address _voter) external view returns (uint256);
     //testing
     function testMin(uint256 a, uint256 b) external pure returns (uint256);
 }

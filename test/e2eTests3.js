@@ -6,7 +6,7 @@ var assert = require('assert');
 const web3 = require('web3');
 const { BigNumber } = require("ethers");
 
-describe("End-to-End Tests - Two", function() {
+describe("End-to-End Tests - Three", function() {
 
     const tellorMaster = "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0"
     const DEV_WALLET = "0x39E419bA25196794B595B2a595Ea8E527ddC9856"
@@ -69,38 +69,49 @@ describe("End-to-End Tests - Two", function() {
     oldOracle = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor", TELLORX_ORACLE)
     parachute = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor",PARACHUTE, devWallet);
 
-    const tokenFactory = await ethers.getContractFactory("TestToken")
-    token = await tokenFactory.deploy()
-    await token.deployed()
-
+    // deploy tellorFlex
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    oracle = await oracleFactory.deploy(tellorMaster, BIGWALLET, BigInt(10E18), 12*60*60)
+    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
     await oracle.deployed()
 
+    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
+    newGovernance = await governanceFactory.deploy(oracle.address, DEV_WALLET)
+    await newGovernance.deployed()
+
+    await oracle.init(newGovernance.address)
+
+    // submit 2 queryId=70 values to new flex
     await tellor.connect(devWallet).transfer(accounts[1].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[1]).approve(oracle.address, BigInt(10E18))
-
     await oracle.connect(accounts[1]).depositStake(BigInt(10E18))
-    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    await oracle.connect(accounts[1]).submitValue(h.uintTob32(70), h.bytes(99), 0, '0x')
+    blockyNew1 = await h.getBlock()
+
+    await tellor.connect(devWallet).transfer(accounts[6].address, web3.utils.toWei("100"));
+    await tellor.connect(accounts[6]).approve(oracle.address, BigInt(10E18))
+    await oracle.connect(accounts[6]).depositStake(BigInt(10E18))
+    await oracle.connect(accounts[6]).submitValue(h.uintTob32(70), h.bytes(100), 0, '0x')
+    blockyNew2 = await h.getBlock()
+
+    // submit 1 queryId=1 value to new flex (required for 360 init)
+    await tellor.connect(devWallet).transfer(accounts[5].address, web3.utils.toWei("100"));
+    await tellor.connect(accounts[5]).approve(oracle.address, BigInt(10E18))
+    await oracle.connect(accounts[5]).depositStake(BigInt(10E18))
+    await oracle.connect(accounts[5]).submitValue(h.uintTob32(1), h.uintTob32(1000), 0, '0x')
 
     //tellorx staker
     await tellor.connect(devWallet).transfer(accounts[2].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[2]).depositStake()
+    
 
     //disputed tellorx staker
     await tellor.connect(devWallet).transfer(accounts[3].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[3]).depositStake()
-    await oldOracle.connect(accounts[3]).submitValue(h.uintTob32(70), h.bytes(100), 0, '0x')
-    console.log(1)
-
-    //disputer 
-    await tellor.connect(devWallet).transfer(accounts[4].address, web3.utils.toWei("100"));
-    let latestTimestamp = await oldOracle.getTimeOfLastNewValue()
-    await governance.connect(accounts[4]).beginDispute(h.uintTob32(70), latestTimestamp)
-
+    await oldOracle.connect(accounts[3]).submitValue(h.uintTob32(70), h.bytes(200), 0, '0x')
+    blockyOld1 = await h.getBlock()
 
     controllerFactory = await ethers.getContractFactory("Test360")
-    controller = await controllerFactory.deploy(DEV_WALLET)
+    controller = await controllerFactory.deploy()
     await controller.deployed()
 
     let controllerAddressEncoded = ethers.utils.defaultAbiCoder.encode([ "address" ],[controller.address])
@@ -119,48 +130,31 @@ describe("End-to-End Tests - Two", function() {
 
   })
 
-  it("stakers on tellorx can withdraw and re-stake on tellorflex", async function () {
+  it("values can be retrieved through whole transition period", async function () {
+    // getLastNewValueById
+    lastNewVal = await tellor.getLastNewValueById(70)
+    expect(lastNewVal[0]).to.equal(200)
+    expect(lastNewVal[1]).to.be.true
 
-    //this staker has staked in the beforeEach on TellorX
+    // getNewValueCountbyRequestId
+    newValCount = await tellor.getNewValueCountbyRequestId(70)
+    expect(newValCount).to.equal(1)
 
-    let oldStakeAmount = BigInt(100E18)
+    // getTimestampbyRequestIDandIndex
+    timestampByIndex = await tellor.getTimestampbyRequestIDandIndex(70, 0)
+    expect(timestampByIndex).to.equal(blockyOld1.timestamp)
 
-    let oldStakerBalance = BigInt(await tellor.balanceOf(accounts[2].address))
-    
-    expect(oldStakerBalance).to.be.equal(oldStakeAmount)
-
-    //they can send their tokens now; they're unlocked
-
-    let tokensTransfered = BigInt(10E18)
-
-    let expectedBalance = BigInt(90E18)
-
-    await tellor.connect(accounts[2]).transfer(accounts[3].address, tokensTransfered)
-
-    expect(expectedBalance).to.be.equal(oldStakerBalance - tokensTransfered)
-
-    //init tellorflex!
-
+    // init 360
     await tellor.connect(devWallet).init(oracle.address)
 
-    //they can now stake again in tellorflex
+    // getLastNewValueById
+    lastNewVal = await tellor.getLastNewValueById(70)
+    expect(lastNewVal[0]).to.equal(100)
+    expect(lastNewVal[1]).to.be.true
 
-    let stake = BigInt(90E18)
-
-    await tellor.connect(accounts[2]).approve(oracle.address, stake)
-    await oracle.connect(accounts[2]).depositStake(stake)
-
-    let newBalance = await tellor.balanceOf(accounts[2].address)
-    expect(newBalance).to.be.equal(BigInt(0))
-
-    let stakerInfo = await oracle.getStakerInfo(accounts[2].address)
-
-    let amountStaked = stakerInfo[1]
-
-    expect(amountStaked).to.equal(BigInt(stake))
-
-
-
+    // getNewValueCountbyRequestId
+    newValCount = await tellor.getNewValueCountbyRequestId(70)
+    expect(newValCount).to.equal(2)
   })
 
 });
