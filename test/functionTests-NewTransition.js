@@ -169,7 +169,7 @@ describe("Function Tests - NewTransition", function() {
     newValCount = await tellor.getNewValueCountbyRequestId(70)
     expect(newValCount).to.equal(1)
 
-    // INIT TELLORFLEX
+    // init tellor360
     await tellor.connect(devWallet).init(oracle.address)
 
     // retrieve from new oracle
@@ -182,7 +182,7 @@ describe("Function Tests - NewTransition", function() {
     timestampByIndex = await tellor.getTimestampbyRequestIDandIndex(70, 0)
     expect(timestampByIndex).to.equal(blockyOld1.timestamp)
 
-    // INIT TELLORFLEX
+    // INIT tellor360
     await tellor.connect(devWallet).init(oracle.address)
 
     // retrieve from new oracle
@@ -210,9 +210,11 @@ describe("Function Tests - NewTransition", function() {
   })
 
   it("retrieveData()", async function () {
-    expect(await tellor.retrieveData(70, blockyOld1.timestamp)).to.equal(200)
+    retrievedVal = await tellor["retrieveData(uint256,uint256)"](70, blockyOld1.timestamp);
+    expect(retrievedVal).to.equal(200)
     await tellor.connect(devWallet).init(oracle.address)
-    expect(await tellor.retrieveData(70, blockyNew1.timestamp)).to.equal(99)
+    retrievedVal = await tellor["retrieveData(uint256,uint256)"](70, blockyNew1.timestamp);
+    expect(retrievedVal).to.equal(99)
   })
 
   it("symbol()", async function () {

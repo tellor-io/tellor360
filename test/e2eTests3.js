@@ -71,8 +71,14 @@ describe("End-to-End Tests - Three", function() {
 
     // deploy tellorFlex
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    oracle = await oracleFactory.deploy(tellorMaster, BIGWALLET, BigInt(10E18), 12*60*60)
+    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
     await oracle.deployed()
+
+    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
+    newGovernance = await governanceFactory.deploy(oracle.address, DEV_WALLET)
+    await newGovernance.deployed()
+
+    await oracle.init(newGovernance.address)
 
     // submit 2 queryId=70 values to new flex
     await tellor.connect(devWallet).transfer(accounts[1].address, web3.utils.toWei("100"));
@@ -125,9 +131,6 @@ describe("End-to-End Tests - Three", function() {
   })
 
   it("values can be retrieved through whole transition period", async function () {
-
-    // getNewValueCountbyRequestId getTimestampbyRequestIDandIndex getLastNewValueById getCurrentValue
-
     // getLastNewValueById
     lastNewVal = await tellor.getLastNewValueById(70)
     expect(lastNewVal[0]).to.equal(200)
@@ -137,18 +140,11 @@ describe("End-to-End Tests - Three", function() {
     newValCount = await tellor.getNewValueCountbyRequestId(70)
     expect(newValCount).to.equal(1)
 
-    console.log("blockyNew1: " + blockyNew1.timestamp)
-    console.log("blockyNew2: " + blockyNew2.timestamp)
-    console.log("blockyOld1: " + blockyOld1.timestamp)
     // getTimestampbyRequestIDandIndex
     timestampByIndex = await tellor.getTimestampbyRequestIDandIndex(70, 0)
     expect(timestampByIndex).to.equal(blockyOld1.timestamp)
 
-
-
-    console.log("timestampByQueryIdAndIndex: " + await oracle.getTimestampbyQueryIdandIndex(h.uintTob32(70), 0))
-
-    // INIT TELLORFLEX
+    // init 360
     await tellor.connect(devWallet).init(oracle.address)
 
     // getLastNewValueById
