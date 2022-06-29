@@ -73,18 +73,15 @@ describe("Function Tests - BaseToken", function() {
     parachute = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor",PARACHUTE, devWallet);
 
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    // oracle = await oracleFactory.deploy(tellorMaster, BIGWALLET, BigInt(10E18), 12*60*60)
     oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
     await oracle.deployed()
 
     let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
-    newGovernance = await governanceFactory.deploy(oracle.address, BigInt(1e18), DEV_WALLET)
+    newGovernance = await governanceFactory.deploy(oracle.address, DEV_WALLET)
     await newGovernance.deployed()
 
     await oracle.init(newGovernance.address)
 
-
-    // ** start new
     // submit 2 queryId=70 values to new flex
     await tellor.connect(devWallet).transfer(accounts[1].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[1]).approve(oracle.address, BigInt(10E18))
@@ -108,13 +105,11 @@ describe("Function Tests - BaseToken", function() {
     await tellor.connect(devWallet).transfer(accounts[2].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[2]).depositStake()
     
-
     //disputed tellorx staker
     await tellor.connect(devWallet).transfer(accounts[3].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[3]).depositStake()
     await oldOracle.connect(accounts[3]).submitValue(h.uintTob32(70), h.bytes(200), 0, '0x')
     blockyOld1 = await h.getBlock()
-    // ** end new
 
     controllerFactory = await ethers.getContractFactory("Test360")
     controller = await controllerFactory.deploy()
@@ -197,7 +192,6 @@ describe("Function Tests - BaseToken", function() {
   })
 
   it("transfer()", async function () {
-    await h.expectThrow(tellor.connect(devWallet).transfer(accounts[10].address, 0)) // can't transfer 0 amount
     await h.expectThrow(tellor.connect(devWallet).transfer("0x0000000000000000000000000000000000000000", web3.utils.toWei("10"))) // can't transfer 0 amount
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(0)
     await h.expectThrow(tellor.connect(accounts[10]).transfer(accounts[6].address, web3.utils.toWei("75")))

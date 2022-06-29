@@ -70,6 +70,29 @@ contract NewTransition is TellorStorage, TellorVars {
     }
 
     /**
+     * @dev Function is solely for the parachute contract
+     */
+    function getNewCurrentVariables()
+        external
+        view
+        returns (
+            bytes32 _c,
+            uint256[5] memory _r,
+            uint256 _diff,
+            uint256 _tip
+        )
+    {
+        _r = [uint256(1), uint256(1), uint256(1), uint256(1), uint256(1)];
+        _diff = 0;
+        _tip = 0;
+        _c = keccak256(
+            abi.encode(
+                IOracle(addresses[_ORACLE_CONTRACT]).getTimeOfLastNewValue()
+            )
+        );
+    }
+
+    /**
      * @dev Counts the number of values that have been submitted for the request.
      * @param _requestId the requestId to look up
      * @return uint256 count of the number of values received for the requestId

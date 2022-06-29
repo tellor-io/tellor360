@@ -5,7 +5,7 @@ var assert = require('assert');
 const web3 = require('web3');
 const { ethers } = require("hardhat");
 
-describe("Function Tests", function() {
+describe("Function Tests - NewTransition", function() {
 
   const tellorMaster = "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0"
   const DEV_WALLET = "0x39E419bA25196794B595B2a595Ea8E527ddC9856"
@@ -77,18 +77,15 @@ describe("Function Tests", function() {
     await token.deployed()
 
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    // oracle = await oracleFactory.deploy(tellorMaster, BIGWALLET, BigInt(10E18), 12*60*60)
     oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
     await oracle.deployed()
 
     let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
-    newGovernance = await governanceFactory.deploy(oracle.address, BigInt(1e18), DEV_WALLET)
+    newGovernance = await governanceFactory.deploy(oracle.address, DEV_WALLET)
     await newGovernance.deployed()
 
     await oracle.init(newGovernance.address)
 
-
-    // ** start new
     // submit 2 queryId=70 values to new flex
     await tellor.connect(devWallet).transfer(accounts[1].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[1]).approve(oracle.address, BigInt(10E18))
@@ -118,7 +115,6 @@ describe("Function Tests", function() {
     await tellor.connect(accounts[3]).depositStake()
     await oldOracle.connect(accounts[3]).submitValue(h.uintTob32(70), h.bytes(200), 0, '0x')
     blockyOld1 = await h.getBlock()
-    // ** end new
 
     controllerFactory = await ethers.getContractFactory("Test360")
     controller = await controllerFactory.deploy()
@@ -168,7 +164,7 @@ describe("Function Tests", function() {
     expect(lastNewVal[1]).to.be.true
   })
 
-  it("getNewValueCountByQueryId()", async function () {
+  it("getNewValueCountByRequestId()", async function () {
     // retrieve from old oracle
     newValCount = await tellor.getNewValueCountbyRequestId(70)
     expect(newValCount).to.equal(1)

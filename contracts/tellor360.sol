@@ -11,9 +11,6 @@ contract Tellor360 is BaseToken, NewTransition{
     event NewOracleAddress(address _newOracle, uint256 _timestamp);
     event NewProposedOracleAddress(address _newProposedOracle, uint256 _timestamp);
 
-    // NOTE: Test whether during transition but before init, reporters can submit (bad) values to tellorX and immediately 
-    // transfer their TRB to another address - TK
-    
     // Functions
     /**
      * @dev Use this function to initiate the contract
@@ -37,6 +34,8 @@ contract Tellor360 is BaseToken, NewTransition{
         uints[keccak256("_LAST_RELEASE_TIME_TEAM")] = block.timestamp;
         uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
         uints[_SWITCH_TIME] = block.timestamp;
+        // transfer dispute fees collected during transition period to team
+        _doTransfer(addresses[_GOVERNANCE_CONTRACT], addresses[_OWNER], balanceOf(addresses[_GOVERNANCE_CONTRACT]));  
         //mint a few people some tokens (those locked)- These addresses accidentally sent TRB to the
         //oracle contract and are being reimbursed with this mint--BL
         //triple check: https://docs.google.com/spreadsheets/d/1z1GO_9cWRBbWxq651Z7FLoA6iI1nWE4lEHB9OPrZjko/edit#gid=0
@@ -49,17 +48,6 @@ contract Tellor360 is BaseToken, NewTransition{
     }
  
     /**
-     * @dev Use this function to withdraw released tokens to the team
-     */
-    function mintToTeam() external{
-        require(uints[keccak256("_INIT")] == 1, "tellor360 not initiated");
-        //yearly is 4k * 12 mos = 48k per year (131.5 per day)
-        uint256 _releasedAmount = 131.5 ether * (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_TEAM")])/(86400); 
-        uints[keccak256("_LAST_RELEASE_TIME_TEAM")] = block.timestamp;
-        _doMint(addresses[_OWNER], _releasedAmount);
-    }
-
-    /**
      * @dev Use this function to withdraw released tokens to the oracle 
      */
     function mintToOracle() external{
@@ -68,6 +56,17 @@ contract Tellor360 is BaseToken, NewTransition{
         uint256 _releasedAmount = 131.5 ether * (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_DAO")])/(86400); 
         uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
         _doMint(addresses[_ORACLE_CONTRACT], _releasedAmount);
+    }
+
+    /**
+     * @dev Use this function to withdraw released tokens to the team
+     */
+    function mintToTeam() external{
+        require(uints[keccak256("_INIT")] == 1, "tellor360 not initiated");
+        //yearly is 4k * 12 mos = 48k per year (131.5 per day)
+        uint256 _releasedAmount = 131.5 ether * (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_TEAM")])/(86400); 
+        uints[keccak256("_LAST_RELEASE_TIME_TEAM")] = block.timestamp;
+        _doMint(addresses[_OWNER], _releasedAmount);
     }
 
     //TODO: be sure to test we can't just print tokens

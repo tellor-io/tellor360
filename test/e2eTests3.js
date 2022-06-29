@@ -69,10 +69,6 @@ describe("End-to-End Tests - Three", function() {
     oldOracle = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor", TELLORX_ORACLE)
     parachute = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor",PARACHUTE, devWallet);
 
-    // // const tokenFactory = await ethers.getContractFactory("TestToken")
-    // token = await tokenFactory.deploy()
-    // await token.deployed()
-
     // deploy tellorFlex
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
     oracle = await oracleFactory.deploy(tellorMaster, BIGWALLET, BigInt(10E18), 12*60*60)
@@ -100,17 +96,13 @@ describe("End-to-End Tests - Three", function() {
     //tellorx staker
     await tellor.connect(devWallet).transfer(accounts[2].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[2]).depositStake()
-    blockyOld1 = await h.getBlock()
+    
 
     //disputed tellorx staker
     await tellor.connect(devWallet).transfer(accounts[3].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[3]).depositStake()
     await oldOracle.connect(accounts[3]).submitValue(h.uintTob32(70), h.bytes(200), 0, '0x')
-
-    //disputer 
-    // await tellor.connect(devWallet).transfer(accounts[4].address, web3.utils.toWei("100"));
-    // let latestTimestamp = await oldOracle.getTimeOfLastNewValue()
-    // await governance.connect(accounts[4]).beginDispute(h.uintTob32(70), latestTimestamp)
+    blockyOld1 = await h.getBlock()
 
     controllerFactory = await ethers.getContractFactory("Test360")
     controller = await controllerFactory.deploy()
@@ -132,7 +124,7 @@ describe("End-to-End Tests - Three", function() {
 
   })
 
-  it.only("values can be retrieved through whole transition period", async function () {
+  it("values can be retrieved through whole transition period", async function () {
 
     // getNewValueCountbyRequestId getTimestampbyRequestIDandIndex getLastNewValueById getCurrentValue
 
@@ -145,6 +137,9 @@ describe("End-to-End Tests - Three", function() {
     newValCount = await tellor.getNewValueCountbyRequestId(70)
     expect(newValCount).to.equal(1)
 
+    console.log("blockyNew1: " + blockyNew1.timestamp)
+    console.log("blockyNew2: " + blockyNew2.timestamp)
+    console.log("blockyOld1: " + blockyOld1.timestamp)
     // getTimestampbyRequestIDandIndex
     timestampByIndex = await tellor.getTimestampbyRequestIDandIndex(70, 0)
     expect(timestampByIndex).to.equal(blockyOld1.timestamp)
@@ -164,48 +159,6 @@ describe("End-to-End Tests - Three", function() {
     // getNewValueCountbyRequestId
     newValCount = await tellor.getNewValueCountbyRequestId(70)
     expect(newValCount).to.equal(2)
-
-
-
-
-
-    // //this staker has staked in the beforeEach on TellorX
-
-    // let oldStakeAmount = BigInt(100E18)
-
-    // let oldStakerBalance = BigInt(await tellor.balanceOf(accounts[2].address))
-    
-    // expect(oldStakerBalance).to.be.equal(oldStakeAmount)
-
-    // //they can send their tokens now; they're unlocked
-
-    // let tokensTransfered = BigInt(10E18)
-
-    // let expectedBalance = BigInt(90E18)
-
-    // await tellor.connect(accounts[2]).transfer(accounts[3].address, tokensTransfered)
-
-    // expect(expectedBalance).to.be.equal(oldStakerBalance - tokensTransfered)
-
-    // //init tellorflex!
-
-    // await tellor.connect(devWallet).init(oracle.address)
-
-    // //they can now stake again in tellorflex
-
-    // let stake = BigInt(90E18)
-
-    // await tellor.connect(accounts[2]).approve(oracle.address, stake)
-    // await oracle.connect(accounts[2]).depositStake(stake)
-
-    // let newBalance = await tellor.balanceOf(accounts[2].address)
-    // expect(newBalance).to.be.equal(BigInt(0))
-
-    // let stakerInfo = await oracle.getStakerInfo(accounts[2].address)
-
-    // let amountStaked = stakerInfo[1]
-
-    // expect(amountStaked).to.equal(BigInt(stake))
   })
 
 });
