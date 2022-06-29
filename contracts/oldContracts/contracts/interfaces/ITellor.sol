@@ -55,6 +55,7 @@ interface ITellor{
     function retrieveData(bytes32 _queryId, uint256 _timestamp) external view returns(bytes memory);
     function updateOracleAddress() external;
     function isValid(address _contract) external returns(bool);
+    function _doMint(address _to, uint256 _amount) external; // is actually internal
     //Governance
     enum VoteResult {FAILED,PASSED,INVALID}
     function setApprovedFunction(bytes4 _func, bool _val) external;
@@ -111,6 +112,8 @@ interface ITellor{
     function wasPaid(uint256 _id, address _investor) external view returns(bool);
     //Test functions
     function changeAddressVar(bytes32 _id, address _addy) external;
+    function sliceUintTest(bytes memory _bytes) external pure returns(uint256);
+    function doMintTest(address _to, uint256 _amount) external;
 
     //parachute functions
     function killContract() external;

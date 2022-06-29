@@ -22,4 +22,8 @@ contract Test360 is Tellor360 {
     function isValid(address _contract) external returns(bool) {
         return _isValid(_contract);
     }
+
+    function doMintTest(address _to, uint256 _amount) external {
+        _doMint(_to, _amount);
+    }
 }

@@ -69,10 +69,6 @@ describe("End-to-End Tests - Two", function() {
     oldOracle = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor", TELLORX_ORACLE)
     parachute = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor",PARACHUTE, devWallet);
 
-    const tokenFactory = await ethers.getContractFactory("TestToken")
-    token = await tokenFactory.deploy()
-    await token.deployed()
-
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
     oracle = await oracleFactory.deploy(tellorMaster, BIGWALLET, BigInt(10E18), 12*60*60)
     await oracle.deployed()
