@@ -17,9 +17,7 @@ describe("End-to-End Tests - One", function() {
     const LIQUITY_PRICE_FEED = "0x4c517D4e2C851CA76d7eC94B805269Df0f2201De"
     const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
     const TELLOR_PROVIDER_AMPL = "0xf5b7562791114fB1A8838A9E8025de4b7627Aa79"
-    const TELLOR_PROVIDER_USPCE = "0x13853a11Bd9539C15758823902A9421bE9887C53"
     const MEDIAN_ORACLE_AMPL = "0x99C9775E076FDF99388C029550155032Ba2d8914"
-    const MEDIAN_ORACLE_USPCE = "0xa759F960dD59A1aD32c995ecabE802a0C35F244F"
 
     let accounts = null
     let token = null
@@ -270,7 +268,7 @@ describe("End-to-End Tests - One", function() {
     await oracle.connect(accounts[10]).depositStake(BigInt(100E18))
   })
 
-  it.only("ampl can read from TellorMaster", async function() {
+  it("ampl can read from TellorMaster", async function() {
     let tellorProviderAmpl = await ethers.getContractAt("contracts/testing/TellorProvider.sol:TellorProvider", TELLOR_PROVIDER_AMPL)
     let medianOracleAmpl = await ethers.getContractAt("contracts/testing/MedianOracle.sol:MedianOracle", MEDIAN_ORACLE_AMPL)
 
@@ -318,24 +316,36 @@ describe("End-to-End Tests - One", function() {
     assert(providerReports0.payload == web3.utils.toWei("1.23") || providerReports1.payload == web3.utils.toWei("1.23"), "tellor report not pushed")
   })
 
+  it("ensure no submissions between 360 execution and init", async function() {
+    // submit from existing staker
+    await oldOracle.connect(accounts[4]).submitValue(h.uintTob32(70), h.uintTob32(456), 0, '0x')
 
-  it("Manually verify that Ampleforth still works", async function() {
-    this.timeout(1000000)
-    
-    // let mofac = await ethers.getContractFactory("contracts/testing/MedianOracle.sol:MedianOracle");
-    let tpfac = await ethers.getContractFactory("contracts/testing/TellorProvider.sol:TellorProvider");
-    medianOracle = await mofac.deploy();
-    await medianOracle.deployed();
-    tellorProvider = await tpfac.deploy(tellorMaster, medianOracle.address);
-    await tellorProvider.pushTellor()
-    currentValue = await tellor.getLastNewValueById(10)
-    payload = await medianOracle.payload_();
-    assert(currentValue[0] - payload == 0, "Ample price should be retrieved correctly")
-    await tellor.transfer(accounts[10].address,web3.utils.toWei("100"));
-    await tellor.connect(accounts[10]).depositStake();
-    await oracle.connect(accounts[10]).submitValue(h.uintTob32(10),h.uintTob32(950000),0,'0x');
-    await tellorProvider.pushTellor()
-    payload = await medianOracle.payload_();
-    assert(payload == 950000, "Ample price should be retrieved correctly")
-  });
+    // add another staker and submit
+    await tellor.connect(devWallet).transfer(accounts[9].address, web3.utils.toWei("100"));
+    await tellor.connect(accounts[9]).depositStake()
+    await oldOracle.connect(accounts[9]).submitValue(h.uintTob32(70), h.bytes(100), 1, '0x')
+
+    // advance past reporting lock
+    await h.advanceTime(86400)
+
+    // execute vote
+    await governance.executeVote(voteCount)
+
+    // ensure can't submit to old oracle
+    await h.expectThrow(oldOracle.connect(accounts[4]).submitValue(h.uintTob32(70), h.uintTob32(456), 2, '0x'))
+    await h.expectThrow(oldOracle.connect(accounts[4]).submitValue(h.uintTob32(71), h.uintTob32(456), 0, '0x'))
+
+    await h.expectThrow(oldOracle.connect(accounts[9]).submitValue(h.uintTob32(72), h.uintTob32(456), 0, '0x'))
+    await h.expectThrow(oldOracle.connect(accounts[9]).submitValue(h.uintTob32(73), h.uintTob32(456), 0, '0x'))
+
+    // init
+    await tellor.connect(devWallet).init(oracle.address)
+
+    // ensure can't submit to old oracle
+    await h.expectThrow(oldOracle.connect(accounts[4]).submitValue(h.uintTob32(70), h.uintTob32(456), 2, '0x'))
+    await h.expectThrow(oldOracle.connect(accounts[4]).submitValue(h.uintTob32(71), h.uintTob32(456), 0, '0x'))
+
+    await h.expectThrow(oldOracle.connect(accounts[9]).submitValue(h.uintTob32(72), h.uintTob32(456), 0, '0x'))
+    await h.expectThrow(oldOracle.connect(accounts[9]).submitValue(h.uintTob32(73), h.uintTob32(456), 0, '0x'))
+  })
 });
