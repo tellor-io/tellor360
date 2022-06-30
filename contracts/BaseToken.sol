@@ -5,7 +5,6 @@ import "./oldContracts/contracts/tellor3/TellorStorage.sol";
 import "./oldContracts/contracts/TellorVars.sol";
 import "./oldContracts/contracts/interfaces/IGovernance.sol";
 
-
 /**
  @author Tellor Inc.
  @title Token
@@ -42,10 +41,7 @@ contract BaseToken is TellorStorage, TellorVars {
      * @param _amount amount the spender is being approved for
      * @return bool true if spender approved successfully
      */
-    function approve(address _spender, uint256 _amount)
-        external
-        returns (bool)
-    {
+    function approve(address _spender, uint256 _amount) public returns (bool) {
         require(_spender != address(0), "ERC20: approve to the zero address");
         _allowances[msg.sender][_spender] = _amount;
         emit Approval(msg.sender, _spender, _amount);
@@ -188,7 +184,7 @@ contract BaseToken is TellorStorage, TellorVars {
         uint256 _amount
     ) internal {
         // Ensure user has a correct balance and to address
-        if(_amount == 0) {
+        if (_amount == 0) {
             return;
         }
         require(_to != address(0), "Receiver is 0 address");
