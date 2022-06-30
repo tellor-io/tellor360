@@ -11,11 +11,15 @@ describe("End-to-End Tests - One", function() {
     const tellorMaster = "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0"
     const DEV_WALLET = "0x39E419bA25196794B595B2a595Ea8E527ddC9856"
     const PARACHUTE = "0x83eB2094072f6eD9F57d3F19f54820ee0BaE6084"
-    const BIGWALLET = "0xf977814e90da44bfa03b6295a0616a897441acec";
+    const BIGWALLET = "0xf977814e90da44bfa03b6295a0616a897441acec"
     const CURR_GOV = "0x51d4088d4EeE00Ae4c55f46E0673e9997121DB00"
     const REPORTER = "0x0D4F81320d36d7B7Cf5fE7d1D547f63EcBD1a3E0"
     const LIQUITY_PRICE_FEED = "0x4c517D4e2C851CA76d7eC94B805269Df0f2201De"
     const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
+    const TELLOR_PROVIDER_AMPL = "0xf5b7562791114fB1A8838A9E8025de4b7627Aa79"
+    const TELLOR_PROVIDER_USPCE = "0x13853a11Bd9539C15758823902A9421bE9887C53"
+    const MEDIAN_ORACLE_AMPL = "0x99C9775E076FDF99388C029550155032Ba2d8914"
+    const MEDIAN_ORACLE_USPCE = "0xa759F960dD59A1aD32c995ecabE802a0C35F244F"
 
     let accounts = null
     let token = null
@@ -265,4 +269,73 @@ describe("End-to-End Tests - One", function() {
     await tellor.connect(accounts[10]).approve(oracle.address, BigInt(100E18))
     await oracle.connect(accounts[10]).depositStake(BigInt(100E18))
   })
+
+  it.only("ampl can read from TellorMaster", async function() {
+    let tellorProviderAmpl = await ethers.getContractAt("contracts/testing/TellorProvider.sol:TellorProvider", TELLOR_PROVIDER_AMPL)
+    let medianOracleAmpl = await ethers.getContractAt("contracts/testing/MedianOracle.sol:MedianOracle", MEDIAN_ORACLE_AMPL)
+
+    // submit ampl value to tellorx
+    amplValCount = await tellor.getNewValueCountbyRequestId(10)
+    await oldOracle.connect(accounts[4]).submitValue(h.uintTob32(10), h.uintTob32(web3.utils.toWei(".95")), amplValCount, '0x')
+    blocky1 = await h.getBlock()
+
+    // advance time
+    await h.advanceTime(86400)
+
+    // push tellor value to ampl provider
+    await tellorProviderAmpl.pushTellor()
+    
+    // ensure correct timestamp pushed to tellor provider
+    tellorReport = await tellorProviderAmpl.tellorReport()
+    assert(tellorReport[0] == blocky1.timestamp || tellorReport[1] == blocky1.timestamp, "tellor report not pushed")
+
+    // ensure correct oracle value pushed to medianOracle contract
+    providerReports0 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 0)
+    providerReports1 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 1)
+    assert(providerReports0.payload == web3.utils.toWei(".95") || providerReports1.payload == web3.utils.toWei(".95"), "tellor report not pushed")
+
+    // submit ampl value to 360 oracle
+    await oracle.connect(accounts[1]).submitValue(h.uintTob32(10), h.uintTob32(web3.utils.toWei("1.23")), 0, '0x')
+    blocky2 = await h.getBlock()
+
+    // upgrade to tellor360
+    await governance.executeVote(voteCount)
+    await tellor.connect(devWallet).init(oracle.address)
+
+    // advance time
+    await h.advanceTime(86400)
+
+    // push tellor value to ampl provider
+    await tellorProviderAmpl.pushTellor()
+
+    // ensure correct timestamp pushed to tellor provider
+    tellorReport = await tellorProviderAmpl.tellorReport()
+    assert(tellorReport[0] == blocky2.timestamp || tellorReport[1] == blocky2.timestamp, "tellor report not pushed")
+
+    // ensure correct oracle value pushed to medianOracle contract
+    providerReports0 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 0)
+    providerReports1 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 1)
+    assert(providerReports0.payload == web3.utils.toWei("1.23") || providerReports1.payload == web3.utils.toWei("1.23"), "tellor report not pushed")
+  })
+
+
+  it("Manually verify that Ampleforth still works", async function() {
+    this.timeout(1000000)
+    
+    // let mofac = await ethers.getContractFactory("contracts/testing/MedianOracle.sol:MedianOracle");
+    let tpfac = await ethers.getContractFactory("contracts/testing/TellorProvider.sol:TellorProvider");
+    medianOracle = await mofac.deploy();
+    await medianOracle.deployed();
+    tellorProvider = await tpfac.deploy(tellorMaster, medianOracle.address);
+    await tellorProvider.pushTellor()
+    currentValue = await tellor.getLastNewValueById(10)
+    payload = await medianOracle.payload_();
+    assert(currentValue[0] - payload == 0, "Ample price should be retrieved correctly")
+    await tellor.transfer(accounts[10].address,web3.utils.toWei("100"));
+    await tellor.connect(accounts[10]).depositStake();
+    await oracle.connect(accounts[10]).submitValue(h.uintTob32(10),h.uintTob32(950000),0,'0x');
+    await tellorProvider.pushTellor()
+    payload = await medianOracle.payload_();
+    assert(payload == 950000, "Ample price should be retrieved correctly")
+  });
 });
