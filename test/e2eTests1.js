@@ -11,11 +11,13 @@ describe("End-to-End Tests - One", function() {
     const tellorMaster = "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0"
     const DEV_WALLET = "0x39E419bA25196794B595B2a595Ea8E527ddC9856"
     const PARACHUTE = "0x83eB2094072f6eD9F57d3F19f54820ee0BaE6084"
-    const BIGWALLET = "0xf977814e90da44bfa03b6295a0616a897441acec";
+    const BIGWALLET = "0xf977814e90da44bfa03b6295a0616a897441acec"
     const CURR_GOV = "0x51d4088d4EeE00Ae4c55f46E0673e9997121DB00"
     const REPORTER = "0x0D4F81320d36d7B7Cf5fE7d1D547f63EcBD1a3E0"
     const LIQUITY_PRICE_FEED = "0x4c517D4e2C851CA76d7eC94B805269Df0f2201De"
     const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
+    const TELLOR_PROVIDER_AMPL = "0xf5b7562791114fB1A8838A9E8025de4b7627Aa79"
+    const MEDIAN_ORACLE_AMPL = "0x99C9775E076FDF99388C029550155032Ba2d8914"
 
     let accounts = null
     let token = null
@@ -264,5 +266,86 @@ describe("End-to-End Tests - One", function() {
     // ensure staker can stake in new oracle
     await tellor.connect(accounts[10]).approve(oracle.address, BigInt(100E18))
     await oracle.connect(accounts[10]).depositStake(BigInt(100E18))
+  })
+
+  it("ampl can read from TellorMaster", async function() {
+    let tellorProviderAmpl = await ethers.getContractAt("contracts/testing/TellorProvider.sol:TellorProvider", TELLOR_PROVIDER_AMPL)
+    let medianOracleAmpl = await ethers.getContractAt("contracts/testing/MedianOracle.sol:MedianOracle", MEDIAN_ORACLE_AMPL)
+
+    // submit ampl value to tellorx
+    amplValCount = await tellor.getNewValueCountbyRequestId(10)
+    await oldOracle.connect(accounts[4]).submitValue(h.uintTob32(10), h.uintTob32(web3.utils.toWei(".95")), amplValCount, '0x')
+    blocky1 = await h.getBlock()
+
+    // advance time
+    await h.advanceTime(86400)
+
+    // push tellor value to ampl provider
+    await tellorProviderAmpl.pushTellor()
+    
+    // ensure correct timestamp pushed to tellor provider
+    tellorReport = await tellorProviderAmpl.tellorReport()
+    assert(tellorReport[0] == blocky1.timestamp || tellorReport[1] == blocky1.timestamp, "tellor report not pushed")
+
+    // ensure correct oracle value pushed to medianOracle contract
+    providerReports0 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 0)
+    providerReports1 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 1)
+    assert(providerReports0.payload == web3.utils.toWei(".95") || providerReports1.payload == web3.utils.toWei(".95"), "tellor report not pushed")
+
+    // submit ampl value to 360 oracle
+    await oracle.connect(accounts[1]).submitValue(h.uintTob32(10), h.uintTob32(web3.utils.toWei("1.23")), 0, '0x')
+    blocky2 = await h.getBlock()
+
+    // upgrade to tellor360
+    await governance.executeVote(voteCount)
+    await tellor.connect(devWallet).init(oracle.address)
+
+    // advance time
+    await h.advanceTime(86400)
+
+    // push tellor value to ampl provider
+    await tellorProviderAmpl.pushTellor()
+
+    // ensure correct timestamp pushed to tellor provider
+    tellorReport = await tellorProviderAmpl.tellorReport()
+    assert(tellorReport[0] == blocky2.timestamp || tellorReport[1] == blocky2.timestamp, "tellor report not pushed")
+
+    // ensure correct oracle value pushed to medianOracle contract
+    providerReports0 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 0)
+    providerReports1 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 1)
+    assert(providerReports0.payload == web3.utils.toWei("1.23") || providerReports1.payload == web3.utils.toWei("1.23"), "tellor report not pushed")
+  })
+
+  it("ensure no submissions between 360 execution and init", async function() {
+    // submit from existing staker
+    await oldOracle.connect(accounts[4]).submitValue(h.uintTob32(70), h.uintTob32(456), 0, '0x')
+
+    // add another staker and submit
+    await tellor.connect(devWallet).transfer(accounts[9].address, web3.utils.toWei("100"));
+    await tellor.connect(accounts[9]).depositStake()
+    await oldOracle.connect(accounts[9]).submitValue(h.uintTob32(70), h.bytes(100), 1, '0x')
+
+    // advance past reporting lock
+    await h.advanceTime(86400)
+
+    // execute vote
+    await governance.executeVote(voteCount)
+
+    // ensure can't submit to old oracle
+    await h.expectThrow(oldOracle.connect(accounts[4]).submitValue(h.uintTob32(70), h.uintTob32(456), 2, '0x'))
+    await h.expectThrow(oldOracle.connect(accounts[4]).submitValue(h.uintTob32(71), h.uintTob32(456), 0, '0x'))
+
+    await h.expectThrow(oldOracle.connect(accounts[9]).submitValue(h.uintTob32(72), h.uintTob32(456), 0, '0x'))
+    await h.expectThrow(oldOracle.connect(accounts[9]).submitValue(h.uintTob32(73), h.uintTob32(456), 0, '0x'))
+
+    // init
+    await tellor.connect(devWallet).init(oracle.address)
+
+    // ensure can't submit to old oracle
+    await h.expectThrow(oldOracle.connect(accounts[4]).submitValue(h.uintTob32(70), h.uintTob32(456), 2, '0x'))
+    await h.expectThrow(oldOracle.connect(accounts[4]).submitValue(h.uintTob32(71), h.uintTob32(456), 0, '0x'))
+
+    await h.expectThrow(oldOracle.connect(accounts[9]).submitValue(h.uintTob32(72), h.uintTob32(456), 0, '0x'))
+    await h.expectThrow(oldOracle.connect(accounts[9]).submitValue(h.uintTob32(73), h.uintTob32(456), 0, '0x'))
   })
 });
