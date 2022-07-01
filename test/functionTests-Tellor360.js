@@ -221,7 +221,7 @@ describe("Function Tests - Tellor360", function() {
     await tellor.mintToOracle()
     //_ORACLE_CONTRACT balance should be greater by 131.5 tokens
     let newBalance = BigInt(await tellor.balanceOf(oracle.address))
-    expect(newBalance).to.equal(oldBalance + BigInt(1315E17))
+    expect(newBalance).to.equal(oldBalance + BigInt(14694E16))
   });
 
   it("transferOutOfContract()", async function () {
