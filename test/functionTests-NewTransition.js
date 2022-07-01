@@ -117,7 +117,7 @@ describe("Function Tests - NewTransition", function() {
     blockyOld1 = await h.getBlock()
 
     controllerFactory = await ethers.getContractFactory("Test360")
-    controller = await controllerFactory.deploy()
+    controller = await controllerFactory.deploy(oracle.address)
     await controller.deployed()
 
     let controllerAddressEncoded = ethers.utils.defaultAbiCoder.encode([ "address" ],[controller.address])
@@ -141,7 +141,7 @@ describe("Function Tests - NewTransition", function() {
   })
 
   it("getAddressVars()", async function () {
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     expect(await tellor.getAddressVars(h.hash("_ORACLE_CONTRACT"))).to.equal(oracle.address)
   })
 
@@ -156,7 +156,7 @@ describe("Function Tests - NewTransition", function() {
     expect(lastNewVal[1]).to.be.true
 
     // INIT TELLORFLEX
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
 
     // retrieve from new oracle
     lastNewVal = await tellor.getLastNewValueById(70)
@@ -170,7 +170,7 @@ describe("Function Tests - NewTransition", function() {
     expect(newValCount).to.equal(1)
 
     // init tellor360
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
 
     // retrieve from new oracle
     newValCount = await tellor.getNewValueCountbyRequestId(70)
@@ -183,7 +183,7 @@ describe("Function Tests - NewTransition", function() {
     expect(timestampByIndex).to.equal(blockyOld1.timestamp)
 
     // INIT tellor360
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
 
     // retrieve from new oracle
     timestampByIndex = await tellor.getTimestampbyRequestIDandIndex(70, 0)
@@ -191,47 +191,47 @@ describe("Function Tests - NewTransition", function() {
   })
 
   it("getUintVar()", async function () {
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     blocky = await h.getBlock()
     expect(await tellor.getUintVar(h.hash("_SWITCH_TIME"))).to.equal(blocky.timestamp)
   })
 
   it("isMigrated()", async function () {
     expect(await tellor.isMigrated(DEV_WALLET)).to.be.true
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     expect(await tellor.isMigrated(DEV_WALLET)).to.be.true
     expect(await tellor.isMigrated(oracle.address)).to.be.false
   })
 
   it("name()", async function () {
     expect(await tellor.name()).to.equal("Tellor Tributes")
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     expect(await tellor.name()).to.equal("Tellor Tributes")
   })
 
   it("retrieveData()", async function () {
     retrievedVal = await tellor["retrieveData(uint256,uint256)"](70, blockyOld1.timestamp);
     expect(retrievedVal).to.equal(200)
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     retrievedVal = await tellor["retrieveData(uint256,uint256)"](70, blockyNew1.timestamp);
     expect(retrievedVal).to.equal(99)
   })
 
   it("symbol()", async function () {
     expect(await tellor.symbol()).to.equal("TRB")
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     expect(await tellor.symbol()).to.equal("TRB")
   })
 
   it("totalSupply()", async function () {
     expect(await tellor.totalSupply()).to.equal(totalSupply)
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     expect(await tellor.totalSupply()).to.equal(totalSupply)
   })
 
   it("_sliceUint()", async function () {
     expect(await tellor.sliceUintTest(h.uintTob32(123))).to.equal(123)
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     expect(await tellor.sliceUintTest(h.uintTob32(456))).to.equal(456)
   })
 })

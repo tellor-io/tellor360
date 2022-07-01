@@ -23,6 +23,7 @@ describe("Function Tests - Tellor360", function() {
   let tellor = null
   let newGovernance = null
   let governance = null
+  let controller = null
   let cfac,ofac,tfac,gfac,parachute,govBig,govTeam
   let govSigner = null
   let devWallet = null
@@ -91,7 +92,7 @@ describe("Function Tests - Tellor360", function() {
     await tellor.connect(accounts[1]).approve(oracle.address, BigInt(10E18))
 
     await oracle.connect(accounts[1]).depositStake(BigInt(10E18))
-    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    // await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
 
     //tellorx staker
     await tellor.connect(devWallet).transfer(accounts[2].address, web3.utils.toWei("100"));
@@ -109,7 +110,7 @@ describe("Function Tests - Tellor360", function() {
 
 
     controllerFactory = await ethers.getContractFactory("Test360")
-    controller = await controllerFactory.deploy()
+    controller = await controllerFactory.deploy(oracle.address)
     await controller.deployed()
 
     let controllerAddressEncoded = ethers.utils.defaultAbiCoder.encode([ "address" ],[controller.address])
@@ -127,27 +128,13 @@ describe("Function Tests - Tellor360", function() {
     await governance.executeVote(voteCount)
   });
 
-  it("init()", async function () {
-    //require 1: onlyOwner
-    await expect(
-      tellor.connect(reporter).init(oracle.address),
-      "rando account could init tellor360"
-    ).to.be.reverted
-  
-    //require 3: tellorflex must have values at least 12 hours old (redeploy flex!)
-    let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
-    await oracle.deployed()
+  it("constructor()", async function() {
+    expect(await controller.getAddressVars(h.hash("_ORACLE_CONTRACT"))).to.equal(oracle.address)
+  })
 
-    // deploy new governance
-    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
-    newGovernance2 = await governanceFactory.deploy(oracle.address, DEV_WALLET)
-    await newGovernance2.deployed()
-
-    await oracle.init(newGovernance2.address)
-    
+  it("init()", async function () {  
     await expect(
-      tellor.connect(devWallet).init(oracle.address),
+      tellor.connect(devWallet).init(),
       "was able to init tellor360 with empty tellorflex"
     ).to.be.reverted
 
@@ -164,7 +151,8 @@ describe("Function Tests - Tellor360", function() {
     oldDevWalletBal = await tellor.balanceOf(DEV_WALLET)
 
     // successful upgrade...
-    await tellor.connect(devWallet).init(oracle.address)
+    // anyone can call init
+    await tellor.connect(accounts[10]).init()
     blocky = await h.getBlock()
 
     //assert the _ORACLE_CONTRACT is now flex
@@ -173,7 +161,7 @@ describe("Function Tests - Tellor360", function() {
 
     //require 2: can only be called once
     await expect(
-      tellor.connect(devWallet).init(oracle.address),
+      tellor.connect(devWallet).init(),
       "was able to init twice!"
     ).to.be.reverted  
 
@@ -190,10 +178,11 @@ describe("Function Tests - Tellor360", function() {
   })
 
   it("mintToTeam()", async function () {
+    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
     await h.expectThrow(tellor.mintToTeam()) // tellor360 not initiated
    //fast forward 12 hours
     h.advanceTime(60*60*12)
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     //get _OWNER account address
     let owner = await tellor.getAddressVars(h.hash("_OWNER"))
     expect(owner).to.equal(DEV_WALLET)
@@ -209,10 +198,11 @@ describe("Function Tests - Tellor360", function() {
   })
 
   it("mintToOracle()", async function () {
+    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
     await h.expectThrow(tellor.mintToOracle()) // tellor360 not initiated
     //fast forward 12 hours
     h.advanceTime(60*60*12)
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     //get _ORACLE_CONTRACT contract balance
     let oldBalance = BigInt(await tellor.balanceOf(oracle.address))
     //fast forward one day
@@ -225,7 +215,9 @@ describe("Function Tests - Tellor360", function() {
   });
 
   it("transferOutOfContract()", async function () {
-    await tellor.connect(devWallet).init(oracle.address)
+    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    await h.advanceTime(86400/2)
+    await tellor.connect(devWallet).init()
 
     let oldTellorBalance = BigInt(await tellor.balanceOf(tellor.address))
     let oldMultisBalance = BigInt(await tellor.balanceOf(DEV_WALLET))
@@ -257,7 +249,9 @@ describe("Function Tests - Tellor360", function() {
   });
 
   it("updateOracleAddress()", async function () {
-    await tellor.connect(devWallet).init(oracle.address)
+    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    await h.advanceTime(86400/2)
+    await tellor.connect(devWallet).init()
 
     // deploy new oracle
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
