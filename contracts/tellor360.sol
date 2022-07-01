@@ -17,13 +17,23 @@ contract Tellor360 is BaseToken, NewTransition {
 
     // Functions
     /**
-     * @dev Use this function to initiate the contract
-     * @param _flexAddress is the contract address that will be deprecated by this contract
+     * @dev Constructor used to store new flex oracle address 
+     * @param _flexAddress is the new oracle contract which will replace the 
+     * tellorX oracle
      */
-    function init(address _flexAddress) external {
-        require(msg.sender == addresses[_OWNER], "only owner");
+    constructor(address _flexAddress) {
+        addresses[_ORACLE_CONTRACT] = _flexAddress;
+    }
+
+    /**
+     * @dev Use this function to initiate the contract
+     */
+    function init() external {
         require(uints[keccak256("_INIT")] == 0, "should only happen once");
         uints[keccak256("_INIT")] = 1;
+        // retrieve new oracle address from Tellor360 contract address storage
+        NewTransition _newController = NewTransition(addresses[_TELLOR_CONTRACT]);
+        address _flexAddress = _newController.getAddressVars(_ORACLE_CONTRACT);
         //on switch over, require tellorFlex values are over 12 hours old
         //then when we switch, the governance switch can be instantaneous
         uint256 _id = 1;
@@ -54,7 +64,6 @@ contract Tellor360 is BaseToken, NewTransition {
      */
     function mintToOracle() external {
         require(uints[keccak256("_INIT")] == 1, "tellor360 not initiated");
-        //yearly is 4k * 12 mos = 48k per year (131.5 per day)
         // X - 0.02X = 144 daily. X = 146.94
         uint256 _releasedAmount = (146.94 ether *
             (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_DAO")])) /

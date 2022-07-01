@@ -7,6 +7,8 @@ import "hardhat/console.sol";
 contract Test360 is Tellor360 {
     event Received(address, uint256);
 
+    constructor(address _flexAddress) Tellor360(_flexAddress) {}
+
     receive() external payable {
         emit Received(msg.sender, msg.value);
     }
