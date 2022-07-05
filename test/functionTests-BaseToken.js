@@ -112,7 +112,7 @@ describe("Function Tests - BaseToken", function() {
     blockyOld1 = await h.getBlock()
 
     controllerFactory = await ethers.getContractFactory("Test360")
-    controller = await controllerFactory.deploy()
+    controller = await controllerFactory.deploy(oracle.address)
     await controller.deployed()
 
     let controllerAddressEncoded = ethers.utils.defaultAbiCoder.encode([ "address" ],[controller.address])
@@ -136,7 +136,7 @@ describe("Function Tests - BaseToken", function() {
     await tellor.connect(accounts[1]).approve(accounts[2].address, web3.utils.toWei("20"))
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("20"))
 
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("20"))
     await tellor.connect(accounts[1]).approve(accounts[2].address, web3.utils.toWei("100"))
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("100"))
@@ -148,7 +148,7 @@ describe("Function Tests - BaseToken", function() {
     await tellor.connect(accounts[1]).approve(accounts[2].address, web3.utils.toWei("20"))
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("20"))
 
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("20"))
     await tellor.connect(accounts[1]).approve(accounts[2].address, web3.utils.toWei("100"))
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("100"))
@@ -163,7 +163,7 @@ describe("Function Tests - BaseToken", function() {
     await tellor.connect(devWallet).transfer(accounts[10].address, web3.utils.toWei("100"))
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("100"))
 
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("100"))    
   })
 
@@ -175,7 +175,7 @@ describe("Function Tests - BaseToken", function() {
     blocky2 = await h.getBlock()
     expect(await tellor.balanceOfAt(accounts[10].address, blocky2.number)).to.equal(web3.utils.toWei("100"))
 
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("100"))    
   })
 
@@ -187,7 +187,7 @@ describe("Function Tests - BaseToken", function() {
     blocky2 = await h.getBlock()
     expect(await tellor.balanceOfAt(accounts[10].address, blocky2.number)).to.equal(web3.utils.toWei("100"))
 
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("100"))    
   })
 
@@ -201,7 +201,7 @@ describe("Function Tests - BaseToken", function() {
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("25"))
     expect(await tellor.balanceOf(accounts[9].address)).to.equal(web3.utils.toWei("75"))
     await h.expectThrow(tellor.connect(accounts[10]).transfer(accounts[9].address, web3.utils.toWei("75")))
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("25"))    
     await tellor.connect(accounts[10]).transfer(accounts[9].address, web3.utils.toWei("10"))
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("15"))    
@@ -221,7 +221,7 @@ describe("Function Tests - BaseToken", function() {
     expect(await tellor.balanceOf(accounts[9].address)).to.equal(web3.utils.toWei("75"))
     await h.expectThrow(tellor.connect(accounts[10]).transferFrom(DEV_WALLET, accounts[9].address, web3.utils.toWei("26"))) // insufficient allowance
     
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     await h.expectThrow(tellor.connect(accounts[10]).transferFrom(DEV_WALLET, accounts[9].address, web3.utils.toWei("26"))) // insufficient allowance
     await tellor.connect(accounts[10]).transferFrom(DEV_WALLET, accounts[9].address, web3.utils.toWei("25"))
     expect(await tellor.allowance(DEV_WALLET, accounts[10].address)).to.equal(0)
@@ -240,7 +240,7 @@ describe("Function Tests - BaseToken", function() {
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("10"))
     blocky = await h.getBlock()
     expect(await tellor.balanceOfAt(accounts[10].address, blocky.number)).to.equal(web3.utils.toWei("10"))
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
     await tellor.doMintTest(accounts[10].address, web3.utils.toWei("10"))
   })
 })

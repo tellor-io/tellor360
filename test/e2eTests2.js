@@ -111,7 +111,7 @@ describe("End-to-End Tests - Two", function() {
     blockyOld1 = await h.getBlock()
 
     controllerFactory = await ethers.getContractFactory("Test360")
-    controller = await controllerFactory.deploy()
+    controller = await controllerFactory.deploy(oracle.address)
     await controller.deployed()
 
     let controllerAddressEncoded = ethers.utils.defaultAbiCoder.encode([ "address" ],[controller.address])
@@ -145,7 +145,7 @@ describe("End-to-End Tests - Two", function() {
     expect(timestampByIndex).to.equal(blockyOld1.timestamp)
 
     // init 360
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
 
     // getLastNewValueById
     lastNewVal = await tellor.getLastNewValueById(70)

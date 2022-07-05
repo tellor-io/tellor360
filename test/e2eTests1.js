@@ -113,7 +113,7 @@ describe("End-to-End Tests - One", function() {
     await governance.connect(accounts[4]).beginDispute(h.uintTob32(70), latestTimestamp)
 
     controllerFactory = await ethers.getContractFactory("Test360")
-    controller = await controllerFactory.deploy()
+    controller = await controllerFactory.deploy(oracle.address)
     await controller.deployed()
 
     let controllerAddressEncoded = ethers.utils.defaultAbiCoder.encode([ "address" ],[controller.address])
@@ -127,13 +127,12 @@ describe("End-to-End Tests - One", function() {
     await h.advanceTime(86400 * 8)
     await governance.tallyVotes(voteCount)
     await h.advanceTime(86400 * 2.5)
-    // await governance.executeVote(voteCount)
   });
 
   it("Mine 2 values on 50 different ID's", async function () {
     // init 360
     await governance.executeVote(voteCount)
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
 
     await tellor.connect(bigWallet).transfer(accounts[9].address, BigInt(120E18))
     await tellor.connect(bigWallet).transfer(accounts[10].address, BigInt(120E18))
@@ -151,7 +150,7 @@ describe("End-to-End Tests - One", function() {
   
   it("Parachute Tests -- rescue failed update", async function () {
     await governance.executeVote(voteCount)
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
 
     let tellorContract = '0x0f1293c916694ac6af4daa2f866f0448d0c2ce8847074a7896d397c961914a08'
 
@@ -179,7 +178,7 @@ describe("End-to-End Tests - One", function() {
 
   it("Manually verify that Liquity still work (mainnet fork their state after oracle updates)", async function() {
     await governance.executeVote(voteCount)
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
 
     let liquityPriceFeed = await ethers.getContractAt("contracts/testing/IPriceFeed.sol:IPriceFeed", LIQUITY_PRICE_FEED)
     await liquityPriceFeed.fetchPrice()
@@ -228,7 +227,7 @@ describe("End-to-End Tests - One", function() {
 
     // init 360
     await governance.executeVote(voteCount)
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
   })
 
   it("can stake and dispute on tellorx within the 12 hours (before init)", async function() {
@@ -248,7 +247,7 @@ describe("End-to-End Tests - One", function() {
 
     // init 360
     await governance.executeVote(voteCount)
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
   })
 
   it("stakers on tellorx can withdraw and re-stake on tellorflex", async function() {
@@ -298,7 +297,7 @@ describe("End-to-End Tests - One", function() {
 
     // upgrade to tellor360
     await governance.executeVote(voteCount)
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
 
     // advance time
     await h.advanceTime(86400)
@@ -339,7 +338,7 @@ describe("End-to-End Tests - One", function() {
     await h.expectThrow(oldOracle.connect(accounts[9]).submitValue(h.uintTob32(73), h.uintTob32(456), 0, '0x'))
 
     // init
-    await tellor.connect(devWallet).init(oracle.address)
+    await tellor.connect(devWallet).init()
 
     // ensure can't submit to old oracle
     await h.expectThrow(oldOracle.connect(accounts[4]).submitValue(h.uintTob32(70), h.uintTob32(456), 2, '0x'))
