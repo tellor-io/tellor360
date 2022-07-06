@@ -129,6 +129,10 @@ describe("End-to-End Tests - One", function() {
     await h.advanceTime(86400 * 2.5)
   });
 
+  it("Delete this test", async function() {
+    // await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+  })
+
   it("Mine 2 values on 50 different ID's", async function () {
     // init 360
     await governance.executeVote(voteCount)

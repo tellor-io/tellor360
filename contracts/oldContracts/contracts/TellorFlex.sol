@@ -32,6 +32,7 @@ contract TellorFlex {
     uint256 public totalRewardDebt;
     uint256 public stakingRewardsBalance;
     uint256 public totalTimeBasedRewardsBalance; // amount of TBR deposited into Tellor Flex
+    uint256 public totalStakers;
 
     mapping(bytes32 => Report) private reports; // mapping of query IDs to a report
     mapping(address => StakeInfo) stakerDetails; //mapping from a persons address to their staking info
@@ -56,6 +57,7 @@ contract TellorFlex {
         uint256 startVoteCount; // total number of governance votes when stake deposited
         uint256 startVoteTally; // staker vote tally when stake deposited
         mapping(bytes32 => uint256) reportsSubmittedByQueryId;
+        bool staked; // used to keep track of total stakers
     }
 
     // Events
@@ -99,7 +101,7 @@ contract TellorFlex {
         owner = msg.sender;
         reportingLock = _reportingLock;
         stakeAmountDollarTarget = _stakeAmountDollarTarget;
-        stakeAmount = _stakeAmountDollarTarget * 10**18 / _priceTRB;
+        stakeAmount = (_stakeAmountDollarTarget * 10**18) / _priceTRB;
     }
 
     function init(address _governanceAddress) external {
@@ -109,7 +111,6 @@ contract TellorFlex {
             _governanceAddress != address(0),
             "governance address can't be zero address"
         );
-
         governance = _governanceAddress;
     }
 
@@ -133,6 +134,7 @@ contract TellorFlex {
         StakeInfo storage _staker = stakerDetails[msg.sender];
         if (_staker.lockedBalance > 0) {
             if (_staker.lockedBalance >= _amount) {
+                // if staker's locked balance covers full _amount, use that
                 _staker.lockedBalance -= _amount;
             } else {
                 require(
@@ -216,7 +218,6 @@ contract TellorFlex {
             "zero staker balance"
         );
         uint256 _slashAmount;
-        _updateStakeAmount();
         if (_staker.lockedBalance >= stakeAmount) {
             _slashAmount = stakeAmount;
             _staker.lockedBalance -= stakeAmount;
@@ -258,7 +259,6 @@ contract TellorFlex {
             "nonce must match timestamp index"
         );
         StakeInfo storage _staker = stakerDetails[msg.sender];
-        _updateStakeAmount();
         require(
             _staker.stakedBalance >= stakeAmount,
             "balance must be greater than stake amount"
@@ -288,9 +288,14 @@ contract TellorFlex {
         // Disperse Time Based Reward
         uint256 _timeDiff = block.timestamp - timeOfLastNewValue;
         uint256 _reward = (_timeDiff * timeBasedReward) / 300; //.5 TRB per 5 minutes
-        if (_reward > 0 && totalTimeBasedRewardsBalance > _reward) {
-            token.transfer(msg.sender, _reward);
-            totalTimeBasedRewardsBalance -= _reward;
+        if (_reward > 0 && totalTimeBasedRewardsBalance > 0) {
+            if (totalTimeBasedRewardsBalance < _reward) {
+                token.transfer(msg.sender, totalTimeBasedRewardsBalance);
+                totalTimeBasedRewardsBalance = 0;
+            } else {
+                token.transfer(msg.sender, _reward);
+                totalTimeBasedRewardsBalance -= _reward;
+            }
         }
         // Update last oracle value and number of values submitted by a reporter
         timeOfLastNewValue = block.timestamp;
@@ -306,8 +311,26 @@ contract TellorFlex {
         );
     }
 
+    function updateStakeAmount() external {
+        (bool _valFound, bytes memory _val, ) = getDataBefore(
+            trbUsdSpotPriceQueryId,
+            block.timestamp - 12 hours
+        );
+        if (_valFound) {
+            uint256 _priceTRB = abi.decode(_val, (uint256));
+            require(
+                _priceTRB >= 0.01 ether && _priceTRB < 1000000 ether,
+                "invalid trb price"
+            );
+            stakeAmount = (stakeAmountDollarTarget * 10**18) / _priceTRB;
+            emit NewStakeAmount(stakeAmount);
+        }
+    }
+
     function updateTotalTimeBasedRewardsBalance() external {
-        totalTimeBasedRewardsBalance = token.balanceOf(address(this)) - (totalStakeAmount + stakingRewardsBalance);
+        totalTimeBasedRewardsBalance =
+            token.balanceOf(address(this)) -
+            (totalStakeAmount + stakingRewardsBalance);
     }
 
     /**
@@ -683,6 +706,14 @@ contract TellorFlex {
     }
 
     /**
+     * @dev Returns total number of current stakers. Reporters with stakedBalance less than stakeAmount are excluded from this total
+     * @return uint256 total stakers
+     */
+    function getTotalStakers() external view returns (uint256) {
+        return totalStakers;
+    }
+
+    /**
      * @dev Retrieve value from oracle based on timestamp
      * @param _queryId being requested
      * @param _timestamp to retrieve data/value from
@@ -696,32 +727,31 @@ contract TellorFlex {
         return reports[_queryId].valueByTimestamp[_timestamp];
     }
 
+    /**
+     * @dev Used during the upgrade process to verify valid Tellor Contracts
+     */
+    function verify() external pure returns (uint256) {
+        return 9999;
+    }
+
     // *****************************************************************************
     // *                                                                           *
     // *                          Internal functions                               *
     // *                                                                           *
     // *****************************************************************************
 
-    function _updateStakeAmount() internal {
-        (bool valFound, bytes memory val,) = getDataBefore(
-            trbUsdSpotPriceQueryId,
-            block.timestamp - 12 hours
-        );
-        if (valFound) {
-            uint256 _priceTRB = abi.decode(val, (uint256));
-            stakeAmount = stakeAmountDollarTarget * 10**18 / _priceTRB;
-            emit NewStakeAmount(stakeAmount);
-        }
-    }
-
+    /**
+     * @dev Updates accumulated staking rewards per staked token
+     */
     function _updateRewards() internal {
         if (timeOfLastAllocation == block.timestamp) {
             return;
         }
-        if (totalStakeAmount == 0) {
+        if (totalStakeAmount == 0 || rewardRate == 0) {
             timeOfLastAllocation = block.timestamp;
             return;
         }
+        // calculate accumulated reward per token staked
         uint256 _newAccumulatedRewardPerShare = accumulatedRewardPerShare +
             ((block.timestamp - timeOfLastAllocation) * rewardRate * 1e18) /
             totalStakeAmount;
@@ -729,13 +759,11 @@ contract TellorFlex {
             totalStakeAmount) /
             1e18 -
             totalRewardDebt;
+        // if staking rewards run out, calculate remaining reward per staked
+        // token and set rewardRate to 0
         if (_accumulatedReward >= stakingRewardsBalance) {
-            accumulatedRewardPerShare +=
-                ((stakingRewardsBalance -
-                    ((accumulatedRewardPerShare * totalStakeAmount) /
-                        1e18 -
-                        totalRewardDebt)) * 1e18) /
-                totalStakeAmount;
+            uint256 _newPendingRewards = stakingRewardsBalance - ((accumulatedRewardPerShare * totalStakeAmount) / 1e18 - totalRewardDebt);
+            accumulatedRewardPerShare += (_newPendingRewards * 1e18) / totalStakeAmount;
             rewardRate = 0;
         } else {
             accumulatedRewardPerShare = _newAccumulatedRewardPerShare;
@@ -743,6 +771,11 @@ contract TellorFlex {
         timeOfLastAllocation = block.timestamp;
     }
 
+    /**
+     * @dev Called whenever a user's stake amount changes. First updates staking rewards,
+     * transfers pending rewards to user's address, and finally updates user's stake amount
+     * and other relevant variables.
+     */
     function _updateStakeAndPayRewards(
         address _stakerAddress,
         uint256 _newStakedBalance
@@ -777,6 +810,21 @@ contract TellorFlex {
             totalStakeAmount -= _staker.stakedBalance;
         }
         _staker.stakedBalance = _newStakedBalance;
+
+        // Update total stakers
+        if (_staker.stakedBalance >= stakeAmount) {
+            if (_staker.staked == false) {
+                totalStakers++;
+            }
+            _staker.staked = true;
+        } else {
+            if (_staker.staked == true && totalStakers > 0) {
+                totalStakers--;
+            }
+            _staker.staked = false;
+        }
+
+        // tracks rewards accumulated before stake amount updated
         _staker.rewardDebt =
             (_staker.stakedBalance * accumulatedRewardPerShare) /
             1e18;
@@ -784,6 +832,10 @@ contract TellorFlex {
         totalStakeAmount += _staker.stakedBalance;
     }
 
+    /**
+     * @dev Internal function retrieves updated accumulatedRewardPerShare
+     * @return uint256 up-to-date accumulated reward per share
+     */
     function _getUpdatedAccumulatedRewardPerShare()
         internal
         view
@@ -800,21 +852,9 @@ contract TellorFlex {
             1e18 -
             totalRewardDebt;
         if (_accumulatedReward >= stakingRewardsBalance) {
-            _newAccumulatedRewardPerShare =
-                accumulatedRewardPerShare +
-                ((stakingRewardsBalance -
-                    (accumulatedRewardPerShare *
-                        totalStakeAmount -
-                        totalRewardDebt)) * 1e18) /
-                totalStakeAmount;
+            uint256 _newPendingRewards = stakingRewardsBalance - ((accumulatedRewardPerShare * totalStakeAmount) / 1e18 - totalRewardDebt);
+            _newAccumulatedRewardPerShare = accumulatedRewardPerShare + (_newPendingRewards * 1e18) / totalStakeAmount;
         }
         return _newAccumulatedRewardPerShare;
-    }
-
-    /**
-     * @dev Used during the upgrade process to verify valid Tellor Contracts
-     */
-    function verify() external pure returns (uint256) {
-        return 9999;
     }
 }
