@@ -347,4 +347,24 @@ describe("End-to-End Tests - One", function() {
     await h.expectThrow(oldOracle.connect(accounts[9]).submitValue(h.uintTob32(72), h.uintTob32(456), 0, '0x'))
     await h.expectThrow(oldOracle.connect(accounts[9]).submitValue(h.uintTob32(73), h.uintTob32(456), 0, '0x'))
   })
+
+  it("disputed tellorx reporters can't transfer stake after init, but team can recover stake", async function() {
+    acc3BalBefore = await tellor.balanceOf(accounts[3].address)
+    acc4BalBefore = await tellor.balanceOf(accounts[4].address)
+
+    await h.expectThrow(tellor.connect(accounts[3]).transfer(accounts[1].address, h.toWei("100"))) // reporter disputed
+
+    // execute vote
+    await governance.executeVote(voteCount)
+    // init
+    await tellor.connect(accounts[1]).init()
+
+    await h.expectThrow(tellor.connect(accounts[3]).transfer(accounts[1].address, h.toWei("100"))) // reporter disputed
+    await tellor.connect(devWallet).teamTransferDisputedStake(accounts[3].address, accounts[4].address)
+    expect(await tellor.balanceOf(accounts[3].address)).to.equal(BigInt(acc3BalBefore) - BigInt(h.toWei("100"))) // acct 3 balance updates
+    expect(await tellor.balanceOf(accounts[4].address)).to.equal(BigInt(acc4BalBefore) + BigInt(h.toWei("100"))) // acct 4 balance updates
+
+    await h.expectThrow(tellor.connect(devWallet).teamTransferDisputedStake(accounts[3].address, accounts[4].address)) // team can't call again
+    await tellor.connect(accounts[3]).transfer(accounts[4].address, h.toWei("1"))
+  })
 });

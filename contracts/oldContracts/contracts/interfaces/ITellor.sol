@@ -41,7 +41,8 @@ interface ITellor{
     function balanceOf(address _user) external view returns (uint256);
     function balanceOfAt(address _user, uint256 _blockNumber)external view returns (uint256);
     function transfer(address _to, uint256 _amount)external returns (bool success);
-    function transferFrom(address _from,address _to,uint256 _amount) external returns (bool success) ;
+    function transferFrom(address _from,address _to,uint256 _amount) external returns (bool success);
+    function teamTransferDisputedStake(address _from, address _to) external returns (bool success);
     function depositStake() external;
     function requestStakingWithdraw() external;
     function withdrawStake() external;

@@ -111,6 +111,8 @@ describe("Function Tests - BaseToken", function() {
     await oldOracle.connect(accounts[3]).submitValue(h.uintTob32(70), h.bytes(200), 0, '0x')
     blockyOld1 = await h.getBlock()
 
+    await governance.connect(accounts[5]).beginDispute(h.uintTob32(70), blockyOld1.timestamp)
+
     controllerFactory = await ethers.getContractFactory("Test360")
     controller = await controllerFactory.deploy(oracle.address)
     await controller.deployed()
@@ -243,4 +245,22 @@ describe("Function Tests - BaseToken", function() {
     await tellor.connect(devWallet).init()
     await tellor.doMintTest(accounts[10].address, web3.utils.toWei("10"))
   })
+
+  it("teamTransferDisputedStake()", async function () {
+    acc3BalBefore = await tellor.balanceOf(accounts[3].address)
+    acc4BalBefore = await tellor.balanceOf(accounts[4].address)
+    // init
+    await tellor.connect(accounts[1]).init()
+    await h.expectThrow(tellor.connect(accounts[1]).teamTransferDisputedStake(accounts[3].address, accounts[4].address)) // only owner can call
+    await tellor.connect(devWallet).teamTransferDisputedStake(accounts[3].address, accounts[4].address)
+    expect(await tellor.balanceOf(accounts[3].address)).to.equal(BigInt(acc3BalBefore) - BigInt(h.toWei("100"))) // acct 3 balance updates
+    expect(await tellor.balanceOf(accounts[4].address)).to.equal(BigInt(acc4BalBefore) + BigInt(h.toWei("100"))) // acct 4 balance updates
+
+    await h.expectThrow(tellor.connect(devWallet).teamTransferDisputedStake(accounts[3].address, accounts[4].address)) // team can't call again
+    await tellor.connect(accounts[3]).transfer(accounts[4].address, h.toWei("1"))
+    await tellor.connect(devWallet).transfer(accounts[3].address, h.toWei('100'))
+    acc3Bal = await tellor.balanceOf(accounts[3].address)
+    await tellor.connect(accounts[3]).transfer(accounts[4].address, acc3Bal)
+  })
+
 })

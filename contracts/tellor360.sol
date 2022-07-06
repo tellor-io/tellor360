@@ -98,7 +98,6 @@ contract Tellor360 is BaseToken, NewTransition {
         _doMint(addresses[_OWNER], _releasedAmount);
     }
 
-    //TODO: be sure to test we can't just print tokens
     /**
      * @dev This function allows team to gain control of any tokens sent directly to this
      * contract (and send them back))
