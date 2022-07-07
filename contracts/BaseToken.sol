@@ -36,6 +36,27 @@ contract BaseToken is TellorStorage, TellorVars {
     }
 
     /**
+     * @dev This function returns whether or not a given user is allowed to trade a given amount
+     * and removing the staked amount from their balance if they are staked
+     * @param _user address of user
+     * @param _amount to check if the user can spend
+     * @return bool true if they are allowed to spend the amount being checked
+     */
+    function allowedToTrade(address _user, uint256 _amount)
+        public
+        view
+        returns (bool)
+    {
+        if (
+            stakerDetails[_user].currentStatus == 3
+        ) {
+            // Subtracts the stakeAmount from balance if the _user is staked
+            return (balanceOf(_user) - uints[_STAKE_AMOUNT] >= _amount);
+        }
+        return (balanceOf(_user) >= _amount); // Else, check if balance is greater than amount they want to spend
+    }
+
+    /**
      * @dev This function approves a _spender an _amount of tokens to use
      * @param _spender address
      * @param _amount amount the spender is being approved for
@@ -152,6 +173,13 @@ contract BaseToken is TellorStorage, TellorVars {
         return true;
     }
 
+    function teamTransferDisputedStake(address _from, address _to) external returns(bool success) {
+        require(msg.sender == addresses[_OWNER], "only owner can transfer disputed staked");
+        require(stakerDetails[_from].currentStatus == 3, "from address not disputed");
+        stakerDetails[_from].currentStatus = 0;
+        _doTransfer(_from, _to, uints[_STAKE_AMOUNT]);
+    }
+
     // Internal
 
     /**
@@ -184,10 +212,15 @@ contract BaseToken is TellorStorage, TellorVars {
         uint256 _amount
     ) internal {
         // Ensure user has a correct balance and to address
-        if (_amount == 0) {
+        if(_amount == 0) {
             return;
         }
+        // require(_amount != 0, "Tried to send non-positive amount");
         require(_to != address(0), "Receiver is 0 address");
+        require(
+            allowedToTrade(_from, _amount),
+            "Should have sufficient balance to trade"
+        );
         // Update balance of _from address
         uint128 _previousBalance = uint128(balanceOf(_from));
         uint128 _sizedAmount = uint128(_amount);
