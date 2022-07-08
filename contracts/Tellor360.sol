@@ -17,8 +17,8 @@ contract Tellor360 is BaseToken, NewTransition {
 
     // Functions
     /**
-     * @dev Constructor used to store new flex oracle address 
-     * @param _flexAddress is the new oracle contract which will replace the 
+     * @dev Constructor used to store new flex oracle address
+     * @param _flexAddress is the new oracle contract which will replace the
      * tellorX oracle
      */
     constructor(address _flexAddress) {
@@ -32,7 +32,9 @@ contract Tellor360 is BaseToken, NewTransition {
         require(uints[keccak256("_INIT")] == 0, "should only happen once");
         uints[keccak256("_INIT")] = 1;
         // retrieve new oracle address from Tellor360 contract address storage
-        NewTransition _newController = NewTransition(addresses[_TELLOR_CONTRACT]);
+        NewTransition _newController = NewTransition(
+            addresses[_TELLOR_CONTRACT]
+        );
         address _flexAddress = _newController.getAddressVars(_ORACLE_CONTRACT);
         //on switch over, require tellorFlex values are over 12 hours old
         //then when we switch, the governance switch can be instantaneous

@@ -47,9 +47,7 @@ contract BaseToken is TellorStorage, TellorVars {
         view
         returns (bool)
     {
-        if (
-            stakerDetails[_user].currentStatus == 3
-        ) {
+        if (stakerDetails[_user].currentStatus == 3) {
             // Subtracts the stakeAmount from balance if the _user is staked
             return (balanceOf(_user) - uints[_STAKE_AMOUNT] >= _amount);
         }
@@ -173,9 +171,18 @@ contract BaseToken is TellorStorage, TellorVars {
         return true;
     }
 
-    function teamTransferDisputedStake(address _from, address _to) external returns(bool success) {
-        require(msg.sender == addresses[_OWNER], "only owner can transfer disputed staked");
-        require(stakerDetails[_from].currentStatus == 3, "from address not disputed");
+    function teamTransferDisputedStake(address _from, address _to)
+        external
+        returns (bool success)
+    {
+        require(
+            msg.sender == addresses[_OWNER],
+            "only owner can transfer disputed staked"
+        );
+        require(
+            stakerDetails[_from].currentStatus == 3,
+            "from address not disputed"
+        );
         stakerDetails[_from].currentStatus = 0;
         _doTransfer(_from, _to, uints[_STAKE_AMOUNT]);
     }
@@ -212,7 +219,7 @@ contract BaseToken is TellorStorage, TellorVars {
         uint256 _amount
     ) internal {
         // Ensure user has a correct balance and to address
-        if(_amount == 0) {
+        if (_amount == 0) {
             return;
         }
         // require(_amount != 0, "Tried to send non-positive amount");
