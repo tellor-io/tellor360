@@ -4,15 +4,13 @@ pragma solidity 0.8.3;
 import "./oldContracts/contracts/tellor3/TellorStorage.sol";
 import "./oldContracts/contracts/TellorVars.sol";
 import "./oldContracts/contracts/interfaces/IOracle.sol";
-import "hardhat/console.sol";
 
 /**
  @author Tellor Inc.
- @title Transition
+ @title NewTransition
 * @dev The Transition contract links to the Oracle contract and
 * allows parties (like Liquity) to continue to use the master
-* address to access values. All parties should be reading values
-* through this address
+* address to access values which use legacy query IDs (request IDs). 
 */
 contract NewTransition is TellorStorage, TellorVars {
     // Functions
@@ -26,10 +24,10 @@ contract NewTransition is TellorStorage, TellorVars {
 
     /**
      * @dev Allows Tellor to read data from the addressVars mapping
-     * @param _data is the keccak256("variable_name") of the variable that is being accessed.
+     * @param _data is the keccak256("_VARIABLE_NAME") of the variable that is being accessed.
      * These are examples of how the variables are saved within other functions:
-     * addressVars[keccak256("_owner")]
-     * addressVars[keccak256("tellorContract")]
+     * addressVars[keccak256("_OWNER")]
+     * addressVars[keccak256("_TELLOR_CONTRACT")]
      * @return address of the requested variable
      */
     function getAddressVars(bytes32 _data) external view returns (address) {
@@ -39,8 +37,8 @@ contract NewTransition is TellorStorage, TellorVars {
     /**
      * @dev Returns the latest value for a specific request ID.
      * @param _requestId the requestId to look up
-     * @return uint256 of the value of the latest value of the request ID
-     * @return bool of whether or not the value was successfully retrieved
+     * @return uint256 the latest value of the request ID
+     * @return bool whether or not the value was successfully retrieved
      */
     function getLastNewValueById(uint256 _requestId)
         public
@@ -103,7 +101,7 @@ contract NewTransition is TellorStorage, TellorVars {
     }
 
     /**
-     * @dev Counts the number of values that have been submitted for the request.
+     * @dev Counts the number of values that have been submitted for the requestId.
      * @param _requestId the requestId to look up
      * @return uint256 count of the number of values received for the requestId
      */
@@ -112,6 +110,7 @@ contract NewTransition is TellorStorage, TellorVars {
         view
         returns (uint256)
     {
+        // try the new oracle first
         try
             IOracle(addresses[_ORACLE_CONTRACT]).getNewValueCountbyQueryId(
                 bytes32(_requestId)
@@ -127,7 +126,7 @@ contract NewTransition is TellorStorage, TellorVars {
     }
 
     /**
-     * @dev Gets the timestamp for the value based on their index
+     * @dev Gets the timestamp for the value based on its index
      * @param _requestId is the requestId to look up
      * @param _index is the value index to look up
      * @return uint256 timestamp
@@ -155,7 +154,7 @@ contract NewTransition is TellorStorage, TellorVars {
 
     /**
      * @dev Getter for the variables saved under the TellorStorageStruct uints variable
-     * @param _data the variable to pull from the mapping. _data = keccak256("variable_name")
+     * @param _data the variable to pull from the mapping. _data = keccak256("_VARIABLE_NAME")
      * where variable_name is the variables/strings used to save the data in the mapping.
      * The variables names in the TellorVariables contract
      * @return uint256 of specified variable
@@ -182,7 +181,7 @@ contract NewTransition is TellorStorage, TellorVars {
 
     /**
      * @dev Retrieve value from oracle based on timestamp
-     * @param _requestId being requested
+    * @param _requestId being requested
      * @param _timestamp to retrieve data/value from
      * @return uint256 value for timestamp submitted
      */
@@ -220,7 +219,7 @@ contract NewTransition is TellorStorage, TellorVars {
         return uints[_TOTAL_SUPPLY];
     }
 
-    // Internal
+    // Internal functions
     /**
      * @dev Utilized to help slice a bytes variable into a uint
      * @param _b is the bytes variable to be sliced
