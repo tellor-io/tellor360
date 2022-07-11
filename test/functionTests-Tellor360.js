@@ -129,7 +129,7 @@ describe("Function Tests - Tellor360", function() {
   });
 
   it("constructor()", async function() {
-    expect(await controller.getAddressVars(h.hash("_ORACLE_CONTRACT"))).to.equal(oracle.address)
+    expect(await controller.getAddressVars(h.hash("_ORACLE_CONTRACT_FOR_INIT"))).to.equal(oracle.address)
   })
 
   it("init()", async function () {  

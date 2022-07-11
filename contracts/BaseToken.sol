@@ -7,7 +7,7 @@ import "./oldContracts/contracts/interfaces/IGovernance.sol";
 
 /**
  @author Tellor Inc.
- @title Token
+ @title BaseToken
  @dev Contains the methods related to transfers and ERC20, its storage
  * and hashes of tellor variables that are used to save gas on transactions.
 */
@@ -21,44 +21,10 @@ contract BaseToken is TellorStorage, TellorVars {
     event Transfer(address indexed _from, address indexed _to, uint256 _value); // ERC20 Transfer Event
 
     // Functions
-    /**
-     * @dev Getter function for remaining spender balance
-     * @param _user address of party with the balance
-     * @param _spender address of spender of parties said balance
-     * @return uint256 Returns the remaining allowance of tokens granted to the _spender from the _user
-     */
-    function allowance(address _user, address _spender)
-        external
-        view
-        returns (uint256)
-    {
-        return _allowances[_user][_spender];
-    }
-
-    /**
-     * @dev This function returns whether or not a given user is allowed to trade a given amount
-     * and removing the staked amount from their balance if they are staked
-     * @param _user address of user
-     * @param _amount to check if the user can spend
-     * @return bool true if they are allowed to spend the amount being checked
-     */
-    function allowedToTrade(address _user, uint256 _amount)
-        public
-        view
-        returns (bool)
-    {
-        if (
-            stakerDetails[_user].currentStatus == 3
-        ) {
-            // Subtracts the stakeAmount from balance if the _user is staked
-            return (balanceOf(_user) - uints[_STAKE_AMOUNT] >= _amount);
-        }
-        return (balanceOf(_user) >= _amount); // Else, check if balance is greater than amount they want to spend
-    }
 
     /**
      * @dev This function approves a _spender an _amount of tokens to use
-     * @param _spender address
+     * @param _spender address receiving the allowance
      * @param _amount amount the spender is being approved for
      * @return bool true if spender approved successfully
      */
@@ -70,42 +36,108 @@ contract BaseToken is TellorStorage, TellorVars {
     }
 
     /**
-     * @dev This function approves a transfer of _amount tokens from _from to _to
-     * @param _from is the address the tokens will be transferred from
-     * @param _to is the address the tokens will be transferred to
-     * @param _amount is the number of tokens to transfer
-     * @return bool true if spender approved successfully
+     * @dev Transfers _amount tokens from message sender to _to address
+     * @param _to token recipient
+     * @param _amount amount of tokens to send
+     * @return success whether the transfer was successful
      */
-    function approveAndTransferFrom(
+    function transfer(address _to, uint256 _amount)
+        external
+        returns (bool success)
+    {
+        _doTransfer(msg.sender, _to, _amount);
+        return true;
+    }
+
+    /**
+     * @notice Send _amount tokens to _to from _from on the condition it
+     * is approved by _from
+     * @param _from the address holding the tokens being transferred
+     * @param _to the address of the recipient
+     * @param _amount the amount of tokens to be transferred
+     * @return success whether the transfer was successful
+     */
+    function transferFrom(
         address _from,
         address _to,
         uint256 _amount
-    ) external returns (bool) {
+    ) external returns (bool success) {
         require(
-            (IGovernance(addresses[_GOVERNANCE_CONTRACT])
-                .isApprovedGovernanceContract(msg.sender) ||
-                msg.sender == addresses[_TREASURY_CONTRACT] ||
-                msg.sender == addresses[_ORACLE_CONTRACT]),
-            "Only the Governance, Treasury, or Oracle Contract can approve and transfer tokens"
+            _allowances[_from][msg.sender] >= _amount,
+            "Allowance is wrong"
         );
+        _allowances[_from][msg.sender] -= _amount;
         _doTransfer(_from, _to, _amount);
         return true;
     }
 
     /**
-     * @dev Gets balance of owner specified
-     * @param _user is the owner address used to look up the balance
-     * @return uint256 Returns the balance associated with the passed in _user
+     * @notice Allows tellor team to transfer stake of disputed TellorX reporter
+     * NOTE: this does not affect TellorFlex stakes
+     * @param _from the staker address holding the tokens being transferred
+     * @param _to the address of the recipient
+     */
+    function teamTransferDisputedStake(address _from, address _to) external {
+        require(
+            msg.sender == addresses[_OWNER],
+            "only owner can transfer disputed staked"
+        );
+        require(
+            stakerDetails[_from].currentStatus == 3,
+            "from address not disputed"
+        );
+        stakerDetails[_from].currentStatus = 0;
+        _doTransfer(_from, _to, uints[_STAKE_AMOUNT]);
+    }
+
+    // Getters
+    /**
+     * @dev Getter function for remaining spender balance
+     * @param _user address of party with the balance
+     * @param _spender address of spender of said user's balance
+     * @return uint256 the remaining allowance of tokens granted to the _spender from the _user
+     */
+    function allowance(address _user, address _spender)
+        external
+        view
+        returns (uint256)
+    {
+        return _allowances[_user][_spender];
+    }
+
+    /**
+     * @dev This function returns whether or not a given user is allowed to trade a given amount
+     * and removes the staked amount if they are staked in TellorX and disputed
+     * @param _user address of user
+     * @param _amount to check if the user can spend
+     * @return bool true if they are allowed to spend the amount being checked
+     */
+    function allowedToTrade(address _user, uint256 _amount)
+        public
+        view
+        returns (bool)
+    {
+        if (stakerDetails[_user].currentStatus == 3) {
+            // Subtracts the stakeAmount from balance if the _user is staked and disputed in TellorX
+            return (balanceOf(_user) - uints[_STAKE_AMOUNT] >= _amount);
+        }
+        return (balanceOf(_user) >= _amount); // Else, check if balance is greater than amount they want to spend
+    }
+
+    /**
+     * @dev Gets the balance of a given address
+     * @param _user the address whose balance to look up
+     * @return uint256 the balance of the given _user address
      */
     function balanceOf(address _user) public view returns (uint256) {
         return balanceOfAt(_user, block.number);
     }
 
     /**
-     * @dev Queries the balance of _user at a specific _blockNumber
-     * @param _user The address from which the balance will be retrieved
-     * @param _blockNumber The block number when the balance is queried
-     * @return uint256 The balance at _blockNumber specified
+     * @dev Gets the historic balance of a given _user address at a specific _blockNumber
+     * @param _user the address whose balance to look up
+     * @param _blockNumber the block number at which the balance is queried
+     * @return uint256 the balance of the _user address at the _blockNumber specified
      */
     function balanceOfAt(address _user, uint256 _blockNumber)
         public
@@ -137,55 +169,11 @@ contract BaseToken is TellorStorage, TellorVars {
         }
     }
 
-    /**
-     * @dev Allows for a transfer of tokens to _to
-     * @param _to The address to send tokens to
-     * @param _amount The amount of tokens to send
-     * @return success whether the transfer was successful
-     */
-    function transfer(address _to, uint256 _amount)
-        external
-        returns (bool success)
-    {
-        _doTransfer(msg.sender, _to, _amount);
-        return true;
-    }
-
-    /**
-     * @notice Send _amount tokens to _to from _from on the condition it
-     * is approved by _from
-     * @param _from The address holding the tokens being transferred
-     * @param _to The address of the recipient
-     * @param _amount The amount of tokens to be transferred
-     * @return success whether the transfer was successful
-     */
-    function transferFrom(
-        address _from,
-        address _to,
-        uint256 _amount
-    ) external returns (bool success) {
-        require(
-            _allowances[_from][msg.sender] >= _amount,
-            "Allowance is wrong"
-        );
-        _allowances[_from][msg.sender] -= _amount;
-        _doTransfer(_from, _to, _amount);
-        return true;
-    }
-
-    function teamTransferDisputedStake(address _from, address _to) external returns(bool success) {
-        require(msg.sender == addresses[_OWNER], "only owner can transfer disputed staked");
-        require(stakerDetails[_from].currentStatus == 3, "from address not disputed");
-        stakerDetails[_from].currentStatus = 0;
-        _doTransfer(_from, _to, uints[_STAKE_AMOUNT]);
-    }
-
-    // Internal
-
+    // Internal functions
     /**
      * @dev Helps mint new TRB
      * @param _to is the address to send minted amount to
-     * @param _amount is the amount of TRB to send
+     * @param _amount is the amount of TRB to mint and send
      */
     function _doMint(address _to, uint256 _amount) internal {
         // Ensure to address and mint amount are valid
@@ -200,11 +188,11 @@ contract BaseToken is TellorStorage, TellorVars {
     }
 
     /**
-     * @dev Completes transfers by updating the balances on the current block number
-     * and ensuring the amount does not contain tokens staked for reporting
+     * @dev Completes transfers by updating the balances at the current block number
+     * and ensuring the amount does not contain tokens locked for tellorX disputes
      * @param _from address to transfer from
      * @param _to address to transfer to
-     * @param _amount to transfer
+     * @param _amount amount of tokens to transfer
      */
     function _doTransfer(
         address _from,
@@ -212,10 +200,9 @@ contract BaseToken is TellorStorage, TellorVars {
         uint256 _amount
     ) internal {
         // Ensure user has a correct balance and to address
-        if(_amount == 0) {
+        if (_amount == 0) {
             return;
         }
-        // require(_amount != 0, "Tried to send non-positive amount");
         require(_to != address(0), "Receiver is 0 address");
         require(
             allowedToTrade(_from, _amount),
@@ -232,8 +219,8 @@ contract BaseToken is TellorStorage, TellorVars {
     }
 
     /**
-     * @dev Updates balance checkpoint for from and to on the current block number via doTransfer
-     * @param _user is the address whose balance is updated
+     * @dev Updates balance checkpoint _amount for a given _user address at the current block number
+     * @param _user is the address whose balance to update
      * @param _value is the new balance
      */
     function _updateBalanceAtNow(address _user, uint128 _value) internal {

@@ -3,12 +3,16 @@ pragma solidity 0.8.3;
 
 import "./BaseToken.sol";
 import "./NewTransition.sol";
-import "hardhat/console.sol";
 import "./interfaces/ITellorFlex.sol";
 
+/**
+ @author Tellor Inc.
+ @title Tellor360
+ @dev This is the controller contract which defines the functionality for
+ * changing the oracle contract address, as well as minting and migrating tokens
+*/
 contract Tellor360 is BaseToken, NewTransition {
     // Events
-    event NewContractAddress(address _newContract, string _contractName);
     event NewOracleAddress(address _newOracle, uint256 _timestamp);
     event NewProposedOracleAddress(
         address _newProposedOracle,
@@ -17,12 +21,12 @@ contract Tellor360 is BaseToken, NewTransition {
 
     // Functions
     /**
-     * @dev Constructor used to store new flex oracle address 
-     * @param _flexAddress is the new oracle contract which will replace the 
+     * @dev Constructor used to store new flex oracle address
+     * @param _flexAddress is the new oracle contract which will replace the
      * tellorX oracle
      */
     constructor(address _flexAddress) {
-        addresses[_ORACLE_CONTRACT] = _flexAddress;
+        addresses[keccak256("_ORACLE_CONTRACT_FOR_INIT")] = _flexAddress;
     }
 
     /**
@@ -32,8 +36,10 @@ contract Tellor360 is BaseToken, NewTransition {
         require(uints[keccak256("_INIT")] == 0, "should only happen once");
         uints[keccak256("_INIT")] = 1;
         // retrieve new oracle address from Tellor360 contract address storage
-        NewTransition _newController = NewTransition(addresses[_TELLOR_CONTRACT]);
-        address _flexAddress = _newController.getAddressVars(_ORACLE_CONTRACT);
+        NewTransition _newController = NewTransition(
+            addresses[_TELLOR_CONTRACT]
+        );
+        address _flexAddress = _newController.getAddressVars(keccak256("_ORACLE_CONTRACT_FOR_INIT"));
         //on switch over, require tellorFlex values are over 12 hours old
         //then when we switch, the governance switch can be instantaneous
         uint256 _id = 1;
@@ -60,28 +66,40 @@ contract Tellor360 is BaseToken, NewTransition {
     }
 
     /**
+     * @dev Mints tokens of the sender from the old contract to the sender
+     */
+    function migrate() external {
+        require(!migrated[msg.sender], "Already migrated");
+        _doMint(
+            msg.sender,
+            BaseToken(addresses[_OLD_TELLOR]).balanceOf(msg.sender)
+        );
+        migrated[msg.sender] = true;
+    }
+
+    /**
      * @dev Use this function to withdraw released tokens to the oracle
      */
     function mintToOracle() external {
         require(uints[keccak256("_INIT")] == 1, "tellor360 not initiated");
-        // X - 0.02X = 144 daily. X = 146.94
-        uint256 _releasedAmount = (146.94 ether *
-            (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_DAO")])) /
-            (86400);
+        // X - 0.02X = 144 daily time based rewards. X = 146.94
+        uint256 _releasedAmount = 146.94 ether *
+            (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_DAO")]) /
+            86400;
         uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
-        uint256 stakingRewards = (_releasedAmount * 2) / 100;
-        _doMint(addresses[_ORACLE_CONTRACT], _releasedAmount - stakingRewards);
+        uint256 _stakingRewards = _releasedAmount * 2 / 100;
+        _doMint(addresses[_ORACLE_CONTRACT], _releasedAmount - _stakingRewards);
         // Send staking rewards
-        _doMint(address(this), stakingRewards);
-        approve(addresses[_ORACLE_CONTRACT], stakingRewards);
+        _doMint(address(this), _stakingRewards);
+        approve(addresses[_ORACLE_CONTRACT], _stakingRewards);
         try
             ITellorFlex(addresses[_ORACLE_CONTRACT]).addStakingRewards(
-                stakingRewards
+                _stakingRewards
             )
         {
             return;
         } catch {
-            _doMint(addresses[_ORACLE_CONTRACT], stakingRewards);
+            _doMint(addresses[_ORACLE_CONTRACT], _stakingRewards);
         }
     }
 
@@ -138,8 +156,8 @@ contract Tellor360 is BaseToken, NewTransition {
             uints[_SWITCH_TIME] = block.timestamp;
             emit NewOracleAddress(_currentOracle, block.timestamp);
         }
-        //Otherwise if the current oracle is not the proposed oracle, then propose it and
-        //start the clock on the 7 days before it can be made official
+        // Otherwise if the current reported oracle is not the proposed oracle, then propose it and
+        // start the clock on the 7 days before it can be made official
         else {
             require(_isValid(_currentOracle));
             addresses[keccak256("_PROPOSED_ORACLE")] = _currentOracle;
