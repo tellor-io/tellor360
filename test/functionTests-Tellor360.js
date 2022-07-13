@@ -261,7 +261,7 @@ describe("Function Tests - Tellor360", function() {
     expect(await tellor.balanceOf(DEV_WALLET)).to.equal(newMultisBalance)
   });
 
-  it.only("updateOracleAddress()", async function () {
+  it("updateOracleAddress()", async function () {
     await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
     await h.advanceTime(86400/2)
     await tellor.connect(devWallet).init()
