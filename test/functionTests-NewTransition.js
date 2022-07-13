@@ -24,6 +24,7 @@ describe("Function Tests - NewTransition", function() {
   let govSigner = null
   let devWallet = null
   let totalSupply = null
+  let blockyNew2 = null
 
   beforeEach("deploy and setup Tellor360", async function() {
 
@@ -72,9 +73,16 @@ describe("Function Tests - NewTransition", function() {
     oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18), TRB_QUERY_ID)
     await oracle.deployed()
 
-    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
+    let governanceFactory = await ethers.getContractFactory("contracts/testing/TestGovernance.sol:TestGovernance")
     newGovernance = await governanceFactory.deploy(oracle.address, DEV_WALLET)
     await newGovernance.deployed()
+
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [newGovernance.address]
+    })
+    govSigner = await ethers.getSigner(newGovernance.address);
+    await accounts[10].sendTransaction({ to: newGovernance.address, value: ethers.utils.parseEther("1.0") });
 
     await oracle.init(newGovernance.address)
 
@@ -154,6 +162,20 @@ describe("Function Tests - NewTransition", function() {
     lastNewVal = await tellor.getLastNewValueById(70)
     expect(lastNewVal[0]).to.equal(100)
     expect(lastNewVal[1]).to.be.true
+
+    // dispute last value
+    await oracle.connect(govSigner).removeValue(h.uintTob32(70), blockyNew2.timestamp)
+
+    // retrieve value
+    lastNewVal = await tellor.getLastNewValueById(70)
+    expect(lastNewVal[0]).to.equal(99)
+
+    // dispute first value
+    await oracle.connect(govSigner).removeValue(h.uintTob32(70), blockyNew1.timestamp)
+
+    // retrieve value
+    lastNewVal = await tellor.getLastNewValueById(70)
+    expect(lastNewVal[0]).to.equal(0)
   })
 
   it("getNewValueCountByRequestId()", async function () {
@@ -167,6 +189,24 @@ describe("Function Tests - NewTransition", function() {
     // retrieve from new oracle
     newValCount = await tellor.getNewValueCountbyRequestId(70)
     expect(newValCount).to.equal(2)
+
+    // dispute last value
+    await oracle.connect(govSigner).removeValue(h.uintTob32(70), blockyNew2.timestamp)
+
+    // retrieve from new oracle
+    newValCount = await tellor.getNewValueCountbyRequestId(70)
+    expect(newValCount).to.equal(1)
+
+    // dispute first value
+    await oracle.connect(govSigner).removeValue(h.uintTob32(70), blockyNew1.timestamp)
+    
+    // retrieve from new oracle
+    newValCount = await tellor.getNewValueCountbyRequestId(70)
+    expect(newValCount).to.equal(0)
+
+    // get value count for requestId with 0 values
+    newValCount = await tellor.getNewValueCountbyRequestId(71)
+    expect(newValCount).to.equal(0)
   })
 
   it("getTimestampbyRequestIDandIndex()", async function () {

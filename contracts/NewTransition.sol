@@ -96,10 +96,16 @@ contract NewTransition is TellorStorage, TellorVars {
                 bytes32(_requestId)
             )
         returns (uint256 _valueCount) {
+            if(_valueCount == 0) {
+                return 0;
+            }
             uint256 _timestamp = _oracle.getTimestampbyQueryIdandIndex(bytes32(_requestId), _valueCount - 1);
-            while(_oracle.isInDispute(bytes32(_requestId), _timestamp) && _valueCount > 0) {
+            while(_oracle.isInDispute(bytes32(_requestId), _timestamp) && _valueCount > 1) {
                 _valueCount--;
                 _timestamp = _oracle.getTimestampbyQueryIdandIndex(bytes32(_requestId), _valueCount - 1);
+            }
+            if(_valueCount == 1 && _oracle.isInDispute(bytes32(_requestId), _timestamp)) {
+                return 0;
             }
             return _valueCount;
         } catch {
