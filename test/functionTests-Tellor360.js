@@ -162,15 +162,33 @@ describe("Function Tests - Tellor360", function() {
 
     expect(await tellor.getUintVar(h.hash("_INIT"))).to.equal(1)
     expect(await tellor.getAddressVars(h.hash("_ORACLE_CONTRACT"))).to.equal(oracle.address)
-    expect(await tellor.getAddressVars(h.hash("_OLD_ORACLE_CONTRACT"))).to.equal(oldOracle.address)
     expect(await tellor.getUintVar(h.hash("_LAST_RELEASE_TIME_TEAM"))).to.equal(blocky.timestamp)
     expect(await tellor.getUintVar(h.hash("_LAST_RELEASE_TIME_DAO"))).to.equal(blocky.timestamp)
-    expect(await tellor.getUintVar(h.hash("_SWITCH_TIME"))).to.equal(blocky.timestamp)
 
     newDevWalletBal = await tellor.balanceOf(DEV_WALLET)
     expect(newDevWalletBal).to.equal(BigInt(oldDevWalletBal) + BigInt(oldGovBal))
     expect(await tellor.balanceOf(CURR_GOV)).to.equal(0)
   })
+
+  it("migrate()", async function() {
+    // init 360
+    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+   //fast forward 12 hours
+    h.advanceTime(60*60*12)
+    await tellor.connect(devWallet).init()
+
+    // setup migrate
+    let tofac = await ethers.getContractFactory("contracts/testing/TestToken.sol:TestToken");
+    let token = await tofac.deploy();
+    await token.deployed()
+    await token.mint(accounts[5].address, 500)
+    await tellor.changeAddressVar(h.hash("_OLD_TELLOR"), token.address)
+
+    // migrate
+    await tellor.connect(accounts[5]).migrate();
+    h.expectThrow(tellor.connect(accounts[5]).migrate());//should fail if run twice
+    assert(await tellor.balanceOf(accounts[5].address) == 500, "migration should work correctly")
+  });
 
   it("mintToTeam()", async function () {
     await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
@@ -243,7 +261,7 @@ describe("Function Tests - Tellor360", function() {
     expect(await tellor.balanceOf(DEV_WALLET)).to.equal(newMultisBalance)
   });
 
-  it("updateOracleAddress()", async function () {
+  it.only("updateOracleAddress()", async function () {
     await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
     await h.advanceTime(86400/2)
     await tellor.connect(devWallet).init()
@@ -270,7 +288,14 @@ describe("Function Tests - Tellor360", function() {
     oracleQueryData = abiCoder.encode(['string', 'bytes'], ['TellorOracleAddress', oracleQueryDataPartial])
     oracleQueryId = ethers.utils.keccak256(oracleQueryData) // 0xcf0c5863be1cf3b948a9ff43290f931399765d051a60c3b23a4e098148b1f707
     newOracleAddressEncoded = abiCoder.encode(['address'], [newOracle.address])
+    badOracleAddressEncoded = abiCoder.encode(['address'], [accounts[1].address])
 
+    // submit bad oracle address
+    await oracle.connect(accounts[1]).submitValue(oracleQueryId, badOracleAddressEncoded, 0, oracleQueryData)
+    await h.advanceTime(86400/2 + 1)
+    await h.expectThrow(tellor.updateOracleAddress()) // invalid oracle address
+
+    // submit good oracle address
     await oracle.connect(accounts[1]).submitValue(oracleQueryId, newOracleAddressEncoded, 0, oracleQueryData)
     await h.advanceTime(86400/2)
     await tellor.updateOracleAddress()
@@ -298,7 +323,6 @@ describe("Function Tests - Tellor360", function() {
     blockySwitchTime = await h.getBlock()
 
     expect(await tellor.getAddressVars(h.hash("_ORACLE_CONTRACT"))).to.equal(newOracle.address)
-    expect(await tellor.getUintVar(h.hash("_SWITCH_TIME"))).to.equal(blockySwitchTime.timestamp)
   });
 
   it("verify()", async function () {

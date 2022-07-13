@@ -25,6 +25,7 @@ describe("Function Tests - NewTransition", function() {
   let devWallet = null
   let totalSupply = null
   let blockyNew2 = null
+  let blockyNew3 = null
 
   beforeEach("deploy and setup Tellor360", async function() {
 
@@ -104,6 +105,7 @@ describe("Function Tests - NewTransition", function() {
     await tellor.connect(accounts[5]).approve(oracle.address, BigInt(10E18))
     await oracle.connect(accounts[5]).depositStake(BigInt(10E18))
     await oracle.connect(accounts[5]).submitValue(h.uintTob32(1), h.uintTob32(1000), 0, '0x')
+    blockyNew3 = await h.getBlock()
 
     //tellorx staker
     await tellor.connect(devWallet).transfer(accounts[2].address, web3.utils.toWei("100"));
@@ -178,6 +180,16 @@ describe("Function Tests - NewTransition", function() {
     expect(lastNewVal[0]).to.equal(0)
   })
 
+  it("getNewCurrentVariables()", async function () {
+    // init tellor360
+    await tellor.connect(devWallet).init()
+
+    abiCoder = new ethers.utils.AbiCoder()
+    currentVars = await tellor.getNewCurrentVariables()
+    encodedTime = abiCoder.encode(["uint256"], [blockyNew3.timestamp])
+    expect(currentVars[0]).to.equal(ethers.utils.keccak256(encodedTime))
+  })
+
   it("getNewValueCountByRequestId()", async function () {
     // retrieve from old oracle
     newValCount = await tellor.getNewValueCountbyRequestId(70)
@@ -224,8 +236,7 @@ describe("Function Tests - NewTransition", function() {
 
   it("getUintVar()", async function () {
     await tellor.connect(devWallet).init()
-    blocky = await h.getBlock()
-    expect(await tellor.getUintVar(h.hash("_SWITCH_TIME"))).to.equal(blocky.timestamp)
+    expect(await tellor.getUintVar(h.hash("_STAKE_AMOUNT"))).to.equal(h.toWei("100"))
   })
 
   it("isMigrated()", async function () {

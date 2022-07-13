@@ -356,6 +356,7 @@ describe("End-to-End Tests - One", function() {
     await tellor.connect(accounts[1]).init()
 
     await h.expectThrow(tellor.connect(accounts[3]).transfer(accounts[1].address, h.toWei("100"))) // reporter disputed
+    expect(await tellor.allowedToTrade(accounts[3].address, h.toWei("100"))).to.equal(false)
     await tellor.connect(devWallet).teamTransferDisputedStake(accounts[3].address, accounts[4].address)
     expect(await tellor.balanceOf(accounts[3].address)).to.equal(BigInt(acc3BalBefore) - BigInt(h.toWei("100"))) // acct 3 balance updates
     expect(await tellor.balanceOf(accounts[4].address)).to.equal(BigInt(acc4BalBefore) + BigInt(h.toWei("100"))) // acct 4 balance updates

@@ -24,6 +24,7 @@ describe("Function Tests - BaseToken", function() {
   let govSigner = null
   let devWallet = null
   let totalSupply = null
+  let voteCount = null
 
   beforeEach("deploy and setup Tellor360", async function() {
 
@@ -138,6 +139,19 @@ describe("Function Tests - BaseToken", function() {
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("20"))
     await tellor.connect(accounts[1]).approve(accounts[2].address, web3.utils.toWei("100"))
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("100"))
+  })
+
+  it("allowedToTrade", async function() {
+    // init
+    await tellor.connect(accounts[1]).init()
+
+    expect(await tellor.allowedToTrade(accounts[3].address, h.toWei("100"))).to.equal(false)
+    expect(await tellor.allowedToTrade(accounts[3].address, 0)).to.equal(true)
+    await tellor.connect(devWallet).teamTransferDisputedStake(accounts[3].address, accounts[4].address)
+    expect(await tellor.allowedToTrade(accounts[3].address, h.toWei("100"))).to.equal(false)
+    expect(await tellor.allowedToTrade(accounts[3].address, 0)).to.equal(true)
+    await tellor.connect(bigWallet).transfer(accounts[3].address, web3.utils.toWei("100"))
+    expect(await tellor.allowedToTrade(accounts[3].address, h.toWei("100"))).to.equal(true)
   })
 
   it("approve()", async function () {

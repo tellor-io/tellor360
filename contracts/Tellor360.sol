@@ -49,14 +49,10 @@ contract Tellor360 is BaseToken, NewTransition {
             block.timestamp - _firstTimestamp >= 12 hours,
             "contract should be at least 12 hours old"
         );
-        addresses[keccak256("_OLD_ORACLE_CONTRACT")] = addresses[
-            _ORACLE_CONTRACT
-        ];
         addresses[_ORACLE_CONTRACT] = _flexAddress; //used by Liquity+AMPL for this contract's reads
         //init minting uints (timestamps)
         uints[keccak256("_LAST_RELEASE_TIME_TEAM")] = block.timestamp;
         uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
-        uints[_SWITCH_TIME] = block.timestamp;
         // transfer dispute fees collected during transition period to team
         _doTransfer(
             addresses[_GOVERNANCE_CONTRACT],
@@ -91,16 +87,8 @@ contract Tellor360 is BaseToken, NewTransition {
         _doMint(addresses[_ORACLE_CONTRACT], _releasedAmount - _stakingRewards);
         // Send staking rewards
         _doMint(address(this), _stakingRewards);
-        approve(addresses[_ORACLE_CONTRACT], _stakingRewards);
-        try
-            ITellorFlex(addresses[_ORACLE_CONTRACT]).addStakingRewards(
-                _stakingRewards
-            )
-        {
-            return;
-        } catch {
-            _doMint(addresses[_ORACLE_CONTRACT], _stakingRewards);
-        }
+        _allowances[address(this)][addresses[_ORACLE_CONTRACT]] = _stakingRewards;
+        ITellorFlex(addresses[_ORACLE_CONTRACT]).addStakingRewards(_stakingRewards);
     }
 
     /**
@@ -131,38 +119,35 @@ contract Tellor360 is BaseToken, NewTransition {
         bytes32 _queryID = keccak256(
             abi.encode("TellorOracleAddress", abi.encode(bytes("")))
         );
-        bytes memory _currentOracleAddress;
-        (, _currentOracleAddress, ) = IOracle(addresses[_ORACLE_CONTRACT])
+        bytes memory _proposedOracleAddressBytes;
+        (, _proposedOracleAddressBytes, ) = IOracle(addresses[_ORACLE_CONTRACT])
             .getDataBefore(_queryID, block.timestamp - 12 hours);
-        address _currentOracle = abi.decode(_currentOracleAddress, (address));
+        address _proposedOracle = abi.decode(_proposedOracleAddressBytes, (address));
         // If the oracle address being reported is the same as the proposed oracle then update the oracle contract
         // only if 7 days have passed since the new oracle address was made official
-        // and if 12 hours have passed since query id 1 was last reported on the soon to be deprecated oracle contract
-        if (_currentOracle == addresses[keccak256("_PROPOSED_ORACLE")]) {
+        // and if 12 hours have passed since query id 1 was first reported on the new oracle contract
+        if (_proposedOracle == addresses[keccak256("_PROPOSED_ORACLE")]) {
             require(
                 block.timestamp >
-                    uints[keccak256("_TIME_PROPOSED_UPDATED")] + 7 days
+                    uints[keccak256("_TIME_PROPOSED_UPDATED")] + 7 days,
+                    "must wait 7 days after proposing new oracle"
             );
-            uint256 _firstTimestamp = IOracle(_currentOracle)
+            uint256 _firstTimestamp = IOracle(_proposedOracle)
                 .getTimestampbyQueryIdandIndex(bytes32(uint256(1)), 0);
             require(
                 block.timestamp - _firstTimestamp >= 12 hours,
                 "contract should be at least 12 hours old"
             );
-            addresses[keccak256("_OLD_ORACLE_CONTRACT")] = addresses[
-                _ORACLE_CONTRACT
-            ];
-            addresses[_ORACLE_CONTRACT] = _currentOracle;
-            uints[_SWITCH_TIME] = block.timestamp;
-            emit NewOracleAddress(_currentOracle, block.timestamp);
+            addresses[_ORACLE_CONTRACT] = _proposedOracle;
+            emit NewOracleAddress(_proposedOracle, block.timestamp);
         }
         // Otherwise if the current reported oracle is not the proposed oracle, then propose it and
         // start the clock on the 7 days before it can be made official
         else {
-            require(_isValid(_currentOracle));
-            addresses[keccak256("_PROPOSED_ORACLE")] = _currentOracle;
+            require(_isValid(_proposedOracle), "invalid oracle address");
+            addresses[keccak256("_PROPOSED_ORACLE")] = _proposedOracle;
             uints[keccak256("_TIME_PROPOSED_UPDATED")] = block.timestamp;
-            emit NewProposedOracleAddress(_currentOracle, block.timestamp);
+            emit NewProposedOracleAddress(_proposedOracle, block.timestamp);
         }
     }
 
