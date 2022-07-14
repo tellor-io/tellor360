@@ -167,6 +167,7 @@ contract Tellor360 is BaseToken, NewTransition {
         return 9999;
     }
 
+    /**Internal Functions */
     /**
      * @dev Used during the upgrade process to verify valid Tellor Contracts and ensure
      * they have the right signature

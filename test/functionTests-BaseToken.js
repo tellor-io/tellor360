@@ -187,7 +187,6 @@ describe("Function Tests - BaseToken", function() {
   })
 
   it("transfer()", async function () {
-    await h.expectThrow(tellor.connect(devWallet).transfer("0x0000000000000000000000000000000000000000", web3.utils.toWei("10"))) // can't transfer 0 amount
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(0)
     await h.expectThrow(tellor.connect(accounts[10]).transfer(accounts[6].address, web3.utils.toWei("75"))) // insufficient funds
     await tellor.connect(devWallet).transfer(accounts[10].address, web3.utils.toWei("100"))
