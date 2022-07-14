@@ -24,7 +24,6 @@ describe("Function Tests - BaseToken", function() {
   let govSigner = null
   let devWallet = null
   let totalSupply = null
-  let voteCount = null
 
   beforeEach("deploy and setup Tellor360", async function() {
 
@@ -144,7 +143,7 @@ describe("Function Tests - BaseToken", function() {
   it("allowedToTrade", async function() {
     // init
     await tellor.connect(accounts[1]).init()
-
+    // disputed reporter
     expect(await tellor.allowedToTrade(accounts[3].address, h.toWei("100"))).to.equal(false)
     expect(await tellor.allowedToTrade(accounts[3].address, 0)).to.equal(true)
     await tellor.connect(devWallet).teamTransferDisputedStake(accounts[3].address, accounts[4].address)
@@ -164,10 +163,6 @@ describe("Function Tests - BaseToken", function() {
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("20"))
     await tellor.connect(accounts[1]).approve(accounts[2].address, web3.utils.toWei("100"))
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("100"))
-  })
-
-  it("approveAndTransferFrom()", async function () {
-    await h.expectThrow(tellor.connect(accounts[1]).approveAndTransferFrom(DEV_WALLET, accounts[1].address, web3.utils.toWei("100")))
   })
 
   it("balanceOf()", async function () {
@@ -191,33 +186,22 @@ describe("Function Tests - BaseToken", function() {
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("100"))    
   })
 
-  it("balanceOfAt()", async function () {
-    blocky1 = await h.getBlock()
-    expect(await tellor.balanceOfAt(accounts[10].address, blocky1.number)).to.equal(0)
-    await tellor.connect(devWallet).transfer(accounts[10].address, web3.utils.toWei("100"))
-    expect(await tellor.balanceOfAt(accounts[10].address, blocky1.number)).to.equal(0)
-    blocky2 = await h.getBlock()
-    expect(await tellor.balanceOfAt(accounts[10].address, blocky2.number)).to.equal(web3.utils.toWei("100"))
-
-    await tellor.connect(devWallet).init()
-    expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("100"))    
-  })
-
   it("transfer()", async function () {
     await h.expectThrow(tellor.connect(devWallet).transfer("0x0000000000000000000000000000000000000000", web3.utils.toWei("10"))) // can't transfer 0 amount
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(0)
-    await h.expectThrow(tellor.connect(accounts[10]).transfer(accounts[6].address, web3.utils.toWei("75")))
+    await h.expectThrow(tellor.connect(accounts[10]).transfer(accounts[6].address, web3.utils.toWei("75"))) // insufficient funds
     await tellor.connect(devWallet).transfer(accounts[10].address, web3.utils.toWei("100"))
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("100"))
     await tellor.connect(accounts[10]).transfer(accounts[9].address, web3.utils.toWei("75"))
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("25"))
     expect(await tellor.balanceOf(accounts[9].address)).to.equal(web3.utils.toWei("75"))
-    await h.expectThrow(tellor.connect(accounts[10]).transfer(accounts[9].address, web3.utils.toWei("75")))
+    await h.expectThrow(tellor.connect(accounts[10]).transfer(accounts[9].address, web3.utils.toWei("75"))) // insufficient funds
     await tellor.connect(devWallet).init()
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("25"))    
     await tellor.connect(accounts[10]).transfer(accounts[9].address, web3.utils.toWei("10"))
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("15"))    
     expect(await tellor.balanceOf(accounts[9].address)).to.equal(web3.utils.toWei("85"))    
+    h.expectThrow(tellor.connect(accounts[3]).transfer(accounts[9].address, web3.utils.toWei("10"))) // not allowed to trade
   })
 
   it("transferFrom()", async function () {

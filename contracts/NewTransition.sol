@@ -91,20 +91,31 @@ contract NewTransition is TellorStorage, TellorVars {
     {
         IOracle _oracle = IOracle(addresses[_ORACLE_CONTRACT]);
         // try the new oracle first
-        try
-            _oracle.getNewValueCountbyQueryId(
-                bytes32(_requestId)
-            )
-        returns (uint256 _valueCount) {
-            if(_valueCount == 0) {
+        try _oracle.getNewValueCountbyQueryId(bytes32(_requestId)) returns (
+            uint256 _valueCount
+        ) {
+            if (_valueCount == 0) {
                 return 0;
             }
-            uint256 _timestamp = _oracle.getTimestampbyQueryIdandIndex(bytes32(_requestId), _valueCount - 1);
-            while(_oracle.isInDispute(bytes32(_requestId), _timestamp) && _valueCount > 1) {
+            // if last value is disputed, subtract 1 from the count until a non-disputed value is found
+            uint256 _timestamp = _oracle.getTimestampbyQueryIdandIndex(
+                bytes32(_requestId),
+                _valueCount - 1
+            );
+            while (
+                _oracle.isInDispute(bytes32(_requestId), _timestamp) &&
+                _valueCount > 1
+            ) {
                 _valueCount--;
-                _timestamp = _oracle.getTimestampbyQueryIdandIndex(bytes32(_requestId), _valueCount - 1);
+                _timestamp = _oracle.getTimestampbyQueryIdandIndex(
+                    bytes32(_requestId),
+                    _valueCount - 1
+                );
             }
-            if(_valueCount == 1 && _oracle.isInDispute(bytes32(_requestId), _timestamp)) {
+            if (
+                _valueCount == 1 &&
+                _oracle.isInDispute(bytes32(_requestId), _timestamp)
+            ) {
                 return 0;
             }
             return _valueCount;
@@ -172,7 +183,7 @@ contract NewTransition is TellorStorage, TellorVars {
 
     /**
      * @dev Retrieve value from oracle based on timestamp
-    * @param _requestId being requested
+     * @param _requestId being requested
      * @param _timestamp to retrieve data/value from
      * @return uint256 value for timestamp submitted
      */

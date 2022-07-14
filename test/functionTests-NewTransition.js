@@ -24,6 +24,7 @@ describe("Function Tests - NewTransition", function() {
   let govSigner = null
   let devWallet = null
   let totalSupply = null
+  let blockyOld1 = null
   let blockyNew2 = null
   let blockyNew3 = null
 
@@ -147,10 +148,6 @@ describe("Function Tests - NewTransition", function() {
     expect(await tellor.getAddressVars(h.hash("_ORACLE_CONTRACT"))).to.equal(oracle.address)
   })
 
-  it("decimals()", async function () {
-    expect(await tellor.decimals()).to.equal(18)
-  })
-
   it("getLastNewValueById()", async function () {
     // retrieve from old oracle
     lastNewVal = await tellor.getLastNewValueById(70)
@@ -181,10 +178,17 @@ describe("Function Tests - NewTransition", function() {
   })
 
   it("getNewCurrentVariables()", async function () {
+    abiCoder = new ethers.utils.AbiCoder()
+
+    // retrieve from old oracle
+    currentVars = await tellor.getNewCurrentVariables()
+    encodedTime = abiCoder.encode(["uint256"], [blockyOld1.timestamp])
+    expect(currentVars[0]).to.equal(ethers.utils.keccak256(encodedTime))
+
     // init tellor360
     await tellor.connect(devWallet).init()
 
-    abiCoder = new ethers.utils.AbiCoder()
+    // retrieve from new oracle
     currentVars = await tellor.getNewCurrentVariables()
     encodedTime = abiCoder.encode(["uint256"], [blockyNew3.timestamp])
     expect(currentVars[0]).to.equal(ethers.utils.keccak256(encodedTime))

@@ -167,9 +167,9 @@ describe("End-to-End Tests - One", function() {
     await tellor.connect(devWallet).changeTellorContract(controller.address)
     //read tellor contract adddres
     let newAdd = await tellor.getAddressVars(tellorContract)
-    await assert(newAdd == controller.address, "Tellor's address was not updated")
+    assert(newAdd == controller.address, "Tellor's address was not updated")
     let newDeity = await tellor.getAddressVars(h.hash("_DEITY"))
-    await assert(newDeity == DEV_WALLET)
+    assert(newDeity == DEV_WALLET)
   })
 
   it("Manually verify that Liquity still work (mainnet fork their state after oracle updates)", async function() {
@@ -253,6 +253,7 @@ describe("End-to-End Tests - One", function() {
 
     // execute upgrade proposal
     await governance.executeVote(voteCount)
+    await tellor.init()
 
     // ensure old staker can transfer tokens
     await tellor.connect(accounts[10]).transfer(accounts[9].address, BigInt(100E18))

@@ -39,7 +39,9 @@ contract Tellor360 is BaseToken, NewTransition {
         NewTransition _newController = NewTransition(
             addresses[_TELLOR_CONTRACT]
         );
-        address _flexAddress = _newController.getAddressVars(keccak256("_ORACLE_CONTRACT_FOR_INIT"));
+        address _flexAddress = _newController.getAddressVars(
+            keccak256("_ORACLE_CONTRACT_FOR_INIT")
+        );
         //on switch over, require tellorFlex values are over 12 hours old
         //then when we switch, the governance switch can be instantaneous
         uint256 _id = 1;
@@ -79,16 +81,20 @@ contract Tellor360 is BaseToken, NewTransition {
     function mintToOracle() external {
         require(uints[keccak256("_INIT")] == 1, "tellor360 not initiated");
         // X - 0.02X = 144 daily time based rewards. X = 146.94
-        uint256 _releasedAmount = 146.94 ether *
-            (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_DAO")]) /
+        uint256 _releasedAmount = (146.94 ether *
+            (block.timestamp - uints[keccak256("_LAST_RELEASE_TIME_DAO")])) /
             86400;
         uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
-        uint256 _stakingRewards = _releasedAmount * 2 / 100;
+        uint256 _stakingRewards = (_releasedAmount * 2) / 100;
         _doMint(addresses[_ORACLE_CONTRACT], _releasedAmount - _stakingRewards);
         // Send staking rewards
         _doMint(address(this), _stakingRewards);
-        _allowances[address(this)][addresses[_ORACLE_CONTRACT]] = _stakingRewards;
-        ITellorFlex(addresses[_ORACLE_CONTRACT]).addStakingRewards(_stakingRewards);
+        _allowances[address(this)][
+            addresses[_ORACLE_CONTRACT]
+        ] = _stakingRewards;
+        ITellorFlex(addresses[_ORACLE_CONTRACT]).addStakingRewards(
+            _stakingRewards
+        );
     }
 
     /**
@@ -122,7 +128,10 @@ contract Tellor360 is BaseToken, NewTransition {
         bytes memory _proposedOracleAddressBytes;
         (, _proposedOracleAddressBytes, ) = IOracle(addresses[_ORACLE_CONTRACT])
             .getDataBefore(_queryID, block.timestamp - 12 hours);
-        address _proposedOracle = abi.decode(_proposedOracleAddressBytes, (address));
+        address _proposedOracle = abi.decode(
+            _proposedOracleAddressBytes,
+            (address)
+        );
         // If the oracle address being reported is the same as the proposed oracle then update the oracle contract
         // only if 7 days have passed since the new oracle address was made official
         // and if 12 hours have passed since query id 1 was first reported on the new oracle contract
@@ -130,7 +139,7 @@ contract Tellor360 is BaseToken, NewTransition {
             require(
                 block.timestamp >
                     uints[keccak256("_TIME_PROPOSED_UPDATED")] + 7 days,
-                    "must wait 7 days after proposing new oracle"
+                "must wait 7 days after proposing new oracle"
             );
             uint256 _firstTimestamp = IOracle(_proposedOracle)
                 .getTimestampbyQueryIdandIndex(bytes32(uint256(1)), 0);
