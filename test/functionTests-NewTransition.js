@@ -13,21 +13,20 @@ describe("Function Tests - NewTransition", function() {
   const BIGWALLET = "0xf977814e90da44bfa03b6295a0616a897441acec";
   const CURR_GOV = "0x51d4088d4EeE00Ae4c55f46E0673e9997121DB00"
   const REPORTER = "0x0D4F81320d36d7B7Cf5fE7d1D547f63EcBD1a3E0"
-  const LIQUITY_PRICE_FEED = "0x4c517D4e2C851CA76d7eC94B805269Df0f2201De"
   const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
-
+  const TRB_QUERY_ID = "0x5c13cd9c97dbb98f2429c101a2a8150e6c7a0ddaff6124ee176a3a411067ded0"
 
   let accounts = null
-  let token = null
   let oracle = null
   let tellor = null
   let newGovernance = null
   let governance = null
-  let cfac,ofac,tfac,gfac,parachute,govBig,govTeam
   let govSigner = null
   let devWallet = null
-  let abiCoder = new ethers.utils.AbiCoder
   let totalSupply = null
+  let blockyOld1 = null
+  let blockyNew2 = null
+  let blockyNew3 = null
 
   beforeEach("deploy and setup Tellor360", async function() {
 
@@ -72,17 +71,20 @@ describe("Function Tests - NewTransition", function() {
     oldOracle = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor", TELLORX_ORACLE)
     parachute = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor",PARACHUTE, devWallet);
 
-    const tokenFactory = await ethers.getContractFactory("TestToken")
-    token = await tokenFactory.deploy()
-    await token.deployed()
-
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
+    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18), TRB_QUERY_ID)
     await oracle.deployed()
 
-    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
+    let governanceFactory = await ethers.getContractFactory("contracts/testing/TestGovernance.sol:TestGovernance")
     newGovernance = await governanceFactory.deploy(oracle.address, DEV_WALLET)
     await newGovernance.deployed()
+
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [newGovernance.address]
+    })
+    govSigner = await ethers.getSigner(newGovernance.address);
+    await accounts[10].sendTransaction({ to: newGovernance.address, value: ethers.utils.parseEther("1.0") });
 
     await oracle.init(newGovernance.address)
 
@@ -104,6 +106,7 @@ describe("Function Tests - NewTransition", function() {
     await tellor.connect(accounts[5]).approve(oracle.address, BigInt(10E18))
     await oracle.connect(accounts[5]).depositStake(BigInt(10E18))
     await oracle.connect(accounts[5]).submitValue(h.uintTob32(1), h.uintTob32(1000), 0, '0x')
+    blockyNew3 = await h.getBlock()
 
     //tellorx staker
     await tellor.connect(devWallet).transfer(accounts[2].address, web3.utils.toWei("100"));
@@ -145,10 +148,6 @@ describe("Function Tests - NewTransition", function() {
     expect(await tellor.getAddressVars(h.hash("_ORACLE_CONTRACT"))).to.equal(oracle.address)
   })
 
-  it("decimals()", async function () {
-    expect(await tellor.decimals()).to.equal(18)
-  })
-
   it("getLastNewValueById()", async function () {
     // retrieve from old oracle
     lastNewVal = await tellor.getLastNewValueById(70)
@@ -162,6 +161,37 @@ describe("Function Tests - NewTransition", function() {
     lastNewVal = await tellor.getLastNewValueById(70)
     expect(lastNewVal[0]).to.equal(100)
     expect(lastNewVal[1]).to.be.true
+
+    // dispute last value
+    await oracle.connect(govSigner).removeValue(h.uintTob32(70), blockyNew2.timestamp)
+
+    // retrieve value
+    lastNewVal = await tellor.getLastNewValueById(70)
+    expect(lastNewVal[0]).to.equal(99)
+
+    // dispute first value
+    await oracle.connect(govSigner).removeValue(h.uintTob32(70), blockyNew1.timestamp)
+
+    // retrieve value
+    lastNewVal = await tellor.getLastNewValueById(70)
+    expect(lastNewVal[0]).to.equal(0)
+  })
+
+  it("getNewCurrentVariables()", async function () {
+    abiCoder = new ethers.utils.AbiCoder()
+
+    // retrieve from old oracle
+    currentVars = await tellor.getNewCurrentVariables()
+    encodedTime = abiCoder.encode(["uint256"], [blockyOld1.timestamp])
+    expect(currentVars[0]).to.equal(ethers.utils.keccak256(encodedTime))
+
+    // init tellor360
+    await tellor.connect(devWallet).init()
+
+    // retrieve from new oracle
+    currentVars = await tellor.getNewCurrentVariables()
+    encodedTime = abiCoder.encode(["uint256"], [blockyNew3.timestamp])
+    expect(currentVars[0]).to.equal(ethers.utils.keccak256(encodedTime))
   })
 
   it("getNewValueCountByRequestId()", async function () {
@@ -175,6 +205,24 @@ describe("Function Tests - NewTransition", function() {
     // retrieve from new oracle
     newValCount = await tellor.getNewValueCountbyRequestId(70)
     expect(newValCount).to.equal(2)
+
+    // dispute last value
+    await oracle.connect(govSigner).removeValue(h.uintTob32(70), blockyNew2.timestamp)
+
+    // retrieve from new oracle
+    newValCount = await tellor.getNewValueCountbyRequestId(70)
+    expect(newValCount).to.equal(1)
+
+    // dispute first value
+    await oracle.connect(govSigner).removeValue(h.uintTob32(70), blockyNew1.timestamp)
+    
+    // retrieve from new oracle
+    newValCount = await tellor.getNewValueCountbyRequestId(70)
+    expect(newValCount).to.equal(0)
+
+    // get value count for requestId with 0 values
+    newValCount = await tellor.getNewValueCountbyRequestId(71)
+    expect(newValCount).to.equal(0)
   })
 
   it("getTimestampbyRequestIDandIndex()", async function () {
@@ -192,8 +240,7 @@ describe("Function Tests - NewTransition", function() {
 
   it("getUintVar()", async function () {
     await tellor.connect(devWallet).init()
-    blocky = await h.getBlock()
-    expect(await tellor.getUintVar(h.hash("_SWITCH_TIME"))).to.equal(blocky.timestamp)
+    expect(await tellor.getUintVar(h.hash("_STAKE_AMOUNT"))).to.equal(h.toWei("100"))
   })
 
   it("isMigrated()", async function () {

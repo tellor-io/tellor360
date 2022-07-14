@@ -1,4 +1,3 @@
-const { AbiCoder } = require("@ethersproject/abi");
 const { expect } = require("chai");
 const h = require("./helpers/helpers");
 var assert = require('assert');
@@ -13,20 +12,17 @@ describe("Function Tests - BaseToken", function() {
   const BIGWALLET = "0xf977814e90da44bfa03b6295a0616a897441acec";
   const CURR_GOV = "0x51d4088d4EeE00Ae4c55f46E0673e9997121DB00"
   const REPORTER = "0x0D4F81320d36d7B7Cf5fE7d1D547f63EcBD1a3E0"
-  const LIQUITY_PRICE_FEED = "0x4c517D4e2C851CA76d7eC94B805269Df0f2201De"
   const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
+  const TRB_QUERY_ID = "0x5c13cd9c97dbb98f2429c101a2a8150e6c7a0ddaff6124ee176a3a411067ded0"
 
 
   let accounts = null
-  let token = null
   let oracle = null
   let tellor = null
   let newGovernance = null
   let governance = null
-  let cfac,ofac,tfac,gfac,parachute,govBig,govTeam
   let govSigner = null
   let devWallet = null
-  let abiCoder = new ethers.utils.AbiCoder
   let totalSupply = null
 
   beforeEach("deploy and setup Tellor360", async function() {
@@ -73,7 +69,7 @@ describe("Function Tests - BaseToken", function() {
     parachute = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor",PARACHUTE, devWallet);
 
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
+    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18), TRB_QUERY_ID)
     await oracle.deployed()
 
     let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
@@ -144,6 +140,19 @@ describe("Function Tests - BaseToken", function() {
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("100"))
   })
 
+  it("allowedToTrade", async function() {
+    // init
+    await tellor.connect(accounts[1]).init()
+    // disputed reporter
+    expect(await tellor.allowedToTrade(accounts[3].address, h.toWei("100"))).to.equal(false)
+    expect(await tellor.allowedToTrade(accounts[3].address, 0)).to.equal(true)
+    await tellor.connect(devWallet).teamTransferDisputedStake(accounts[3].address, accounts[4].address)
+    expect(await tellor.allowedToTrade(accounts[3].address, h.toWei("100"))).to.equal(false)
+    expect(await tellor.allowedToTrade(accounts[3].address, 0)).to.equal(true)
+    await tellor.connect(bigWallet).transfer(accounts[3].address, web3.utils.toWei("100"))
+    expect(await tellor.allowedToTrade(accounts[3].address, h.toWei("100"))).to.equal(true)
+  })
+
   it("approve()", async function () {
     await h.expectThrow(tellor.approve("0x0000000000000000000000000000000000000000", web3.utils.toWei("10"))) // can't approve zero address as spender
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(0)
@@ -154,10 +163,6 @@ describe("Function Tests - BaseToken", function() {
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("20"))
     await tellor.connect(accounts[1]).approve(accounts[2].address, web3.utils.toWei("100"))
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("100"))
-  })
-
-  it("approveAndTransferFrom()", async function () {
-    await h.expectThrow(tellor.connect(accounts[1]).approveAndTransferFrom(DEV_WALLET, accounts[1].address, web3.utils.toWei("100")))
   })
 
   it("balanceOf()", async function () {
@@ -181,33 +186,22 @@ describe("Function Tests - BaseToken", function() {
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("100"))    
   })
 
-  it("balanceOfAt()", async function () {
-    blocky1 = await h.getBlock()
-    expect(await tellor.balanceOfAt(accounts[10].address, blocky1.number)).to.equal(0)
-    await tellor.connect(devWallet).transfer(accounts[10].address, web3.utils.toWei("100"))
-    expect(await tellor.balanceOfAt(accounts[10].address, blocky1.number)).to.equal(0)
-    blocky2 = await h.getBlock()
-    expect(await tellor.balanceOfAt(accounts[10].address, blocky2.number)).to.equal(web3.utils.toWei("100"))
-
-    await tellor.connect(devWallet).init()
-    expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("100"))    
-  })
-
   it("transfer()", async function () {
     await h.expectThrow(tellor.connect(devWallet).transfer("0x0000000000000000000000000000000000000000", web3.utils.toWei("10"))) // can't transfer 0 amount
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(0)
-    await h.expectThrow(tellor.connect(accounts[10]).transfer(accounts[6].address, web3.utils.toWei("75")))
+    await h.expectThrow(tellor.connect(accounts[10]).transfer(accounts[6].address, web3.utils.toWei("75"))) // insufficient funds
     await tellor.connect(devWallet).transfer(accounts[10].address, web3.utils.toWei("100"))
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("100"))
     await tellor.connect(accounts[10]).transfer(accounts[9].address, web3.utils.toWei("75"))
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("25"))
     expect(await tellor.balanceOf(accounts[9].address)).to.equal(web3.utils.toWei("75"))
-    await h.expectThrow(tellor.connect(accounts[10]).transfer(accounts[9].address, web3.utils.toWei("75")))
+    await h.expectThrow(tellor.connect(accounts[10]).transfer(accounts[9].address, web3.utils.toWei("75"))) // insufficient funds
     await tellor.connect(devWallet).init()
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("25"))    
     await tellor.connect(accounts[10]).transfer(accounts[9].address, web3.utils.toWei("10"))
     expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("15"))    
     expect(await tellor.balanceOf(accounts[9].address)).to.equal(web3.utils.toWei("85"))    
+    h.expectThrow(tellor.connect(accounts[3]).transfer(accounts[9].address, web3.utils.toWei("10"))) // not allowed to trade
   })
 
   it("transferFrom()", async function () {

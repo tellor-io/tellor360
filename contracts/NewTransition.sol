@@ -45,36 +45,15 @@ contract NewTransition is TellorStorage, TellorVars {
         view
         returns (uint256, bool)
     {
-        // try new contract first
-        uint256 _latestTimestamp;
-        try
-            IOracle(addresses[_ORACLE_CONTRACT]).getNewValueCountbyQueryId(
-                (bytes32(_requestId))
-            )
-        returns (uint256 _timeCount) {
-            if (_timeCount == 0) {
-                return (0, false);
-            }
-            _latestTimestamp = IOracle(addresses[_ORACLE_CONTRACT])
-                .getTimestampbyQueryIdandIndex(
-                    bytes32(_requestId),
-                    _timeCount - 1
-                );
-        } catch {
-            uint256 _timeCount = IOracle(addresses[_ORACLE_CONTRACT])
-                .getTimestampCountById(bytes32(_requestId));
-            if (_timeCount == 0) {
-                return (0, false);
-            }
-            _latestTimestamp = IOracle(addresses[_ORACLE_CONTRACT])
-                .getReportTimestampByIndex(bytes32(_requestId), _timeCount - 1);
-        }
-
-        if (_latestTimestamp > 0) {
-            return (retrieveData(_requestId, _latestTimestamp), true);
-        } else {
+        uint256 _count = getNewValueCountbyRequestId(_requestId);
+        if (_count == 0) {
             return (0, false);
         }
+        uint256 _latestTimestamp = getTimestampbyRequestIDandIndex(
+            _requestId,
+            _count - 1
+        );
+        return (retrieveData(_requestId, _latestTimestamp), true);
     }
 
     /**
@@ -106,16 +85,39 @@ contract NewTransition is TellorStorage, TellorVars {
      * @return uint256 count of the number of values received for the requestId
      */
     function getNewValueCountbyRequestId(uint256 _requestId)
-        external
+        public
         view
         returns (uint256)
     {
+        IOracle _oracle = IOracle(addresses[_ORACLE_CONTRACT]);
         // try the new oracle first
-        try
-            IOracle(addresses[_ORACLE_CONTRACT]).getNewValueCountbyQueryId(
-                bytes32(_requestId)
-            )
-        returns (uint256 _valueCount) {
+        try _oracle.getNewValueCountbyQueryId(bytes32(_requestId)) returns (
+            uint256 _valueCount
+        ) {
+            if (_valueCount == 0) {
+                return 0;
+            }
+            // if last value is disputed, subtract 1 from the count until a non-disputed value is found
+            uint256 _timestamp = _oracle.getTimestampbyQueryIdandIndex(
+                bytes32(_requestId),
+                _valueCount - 1
+            );
+            while (
+                _oracle.isInDispute(bytes32(_requestId), _timestamp) &&
+                _valueCount > 1
+            ) {
+                _valueCount--;
+                _timestamp = _oracle.getTimestampbyQueryIdandIndex(
+                    bytes32(_requestId),
+                    _valueCount - 1
+                );
+            }
+            if (
+                _valueCount == 1 &&
+                _oracle.isInDispute(bytes32(_requestId), _timestamp)
+            ) {
+                return 0;
+            }
             return _valueCount;
         } catch {
             return
@@ -132,7 +134,7 @@ contract NewTransition is TellorStorage, TellorVars {
      * @return uint256 timestamp
      */
     function getTimestampbyRequestIDandIndex(uint256 _requestId, uint256 _index)
-        external
+        public
         view
         returns (uint256)
     {
@@ -181,7 +183,7 @@ contract NewTransition is TellorStorage, TellorVars {
 
     /**
      * @dev Retrieve value from oracle based on timestamp
-    * @param _requestId being requested
+     * @param _requestId being requested
      * @param _timestamp to retrieve data/value from
      * @return uint256 value for timestamp submitted
      */

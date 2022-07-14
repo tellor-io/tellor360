@@ -27,6 +27,7 @@ interface IOracle{
     function getDataBefore(bytes32 _queryId, uint256 _timestamp) external view returns(bool, bytes memory, uint256);
     function getTokenAddress() external view returns(address);
     function getStakeAmount() external view returns(uint256);
+    function isInDispute(bytes32 _queryId, uint256 _timestamp) external view returns(bool);
     function slashReporter(address _reporter, address _recipient) external returns(uint256);
     function retrieveData(bytes32 _queryId, uint256 _timestamp)
         external

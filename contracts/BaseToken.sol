@@ -8,8 +8,7 @@ import "./oldContracts/contracts/interfaces/IGovernance.sol";
 /**
  @author Tellor Inc.
  @title BaseToken
- @dev Contains the methods related to transfers and ERC20, its storage
- * and hashes of tellor variables that are used to save gas on transactions.
+ @dev Contains the methods related to ERC20 transfers, allowance, and storage
 */
 contract BaseToken is TellorStorage, TellorVars {
     // Events
@@ -28,11 +27,33 @@ contract BaseToken is TellorStorage, TellorVars {
      * @param _amount amount the spender is being approved for
      * @return bool true if spender approved successfully
      */
-    function approve(address _spender, uint256 _amount) public returns (bool) {
+    function approve(address _spender, uint256 _amount)
+        external
+        returns (bool)
+    {
         require(_spender != address(0), "ERC20: approve to the zero address");
         _allowances[msg.sender][_spender] = _amount;
         emit Approval(msg.sender, _spender, _amount);
         return true;
+    }
+
+    /**
+     * @notice Allows tellor team to transfer stake of disputed TellorX reporter
+     * NOTE: this does not affect TellorFlex stakes
+     * @param _from the staker address holding the tokens being transferred
+     * @param _to the address of the recipient
+     */
+    function teamTransferDisputedStake(address _from, address _to) external {
+        require(
+            msg.sender == addresses[_OWNER],
+            "only owner can transfer disputed staked"
+        );
+        require(
+            stakerDetails[_from].currentStatus == 3,
+            "_from address not disputed"
+        );
+        stakerDetails[_from].currentStatus = 0;
+        _doTransfer(_from, _to, uints[_STAKE_AMOUNT]);
     }
 
     /**
@@ -69,25 +90,6 @@ contract BaseToken is TellorStorage, TellorVars {
         _allowances[_from][msg.sender] -= _amount;
         _doTransfer(_from, _to, _amount);
         return true;
-    }
-
-    /**
-     * @notice Allows tellor team to transfer stake of disputed TellorX reporter
-     * NOTE: this does not affect TellorFlex stakes
-     * @param _from the staker address holding the tokens being transferred
-     * @param _to the address of the recipient
-     */
-    function teamTransferDisputedStake(address _from, address _to) external {
-        require(
-            msg.sender == addresses[_OWNER],
-            "only owner can transfer disputed staked"
-        );
-        require(
-            stakerDetails[_from].currentStatus == 3,
-            "from address not disputed"
-        );
-        stakerDetails[_from].currentStatus = 0;
-        _doTransfer(_from, _to, uints[_STAKE_AMOUNT]);
     }
 
     // Getters

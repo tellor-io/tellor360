@@ -18,9 +18,9 @@ describe("End-to-End Tests - One", function() {
     const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
     const TELLOR_PROVIDER_AMPL = "0xf5b7562791114fB1A8838A9E8025de4b7627Aa79"
     const MEDIAN_ORACLE_AMPL = "0x99C9775E076FDF99388C029550155032Ba2d8914"
+    const TRB_QUERY_ID = "0x5c13cd9c97dbb98f2429c101a2a8150e6c7a0ddaff6124ee176a3a411067ded0"
 
     let accounts = null
-    let token = null
     let oracle = null
     let tellor = null
     let governance = null
@@ -73,13 +73,9 @@ describe("End-to-End Tests - One", function() {
     governance = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor", CURR_GOV)
     oldOracle = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor", TELLORX_ORACLE)
     parachute = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor",PARACHUTE, devWallet);
-
-    const tokenFactory = await ethers.getContractFactory("TestToken")
-    token = await tokenFactory.deploy()
-    await token.deployed()
   
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
+    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18), TRB_QUERY_ID)
     await oracle.deployed()
 
     let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
@@ -171,9 +167,9 @@ describe("End-to-End Tests - One", function() {
     await tellor.connect(devWallet).changeTellorContract(controller.address)
     //read tellor contract adddres
     let newAdd = await tellor.getAddressVars(tellorContract)
-    await assert(newAdd == controller.address, "Tellor's address was not updated")
+    assert(newAdd == controller.address, "Tellor's address was not updated")
     let newDeity = await tellor.getAddressVars(h.hash("_DEITY"))
-    await assert(newDeity == DEV_WALLET)
+    assert(newDeity == DEV_WALLET)
   })
 
   it("Manually verify that Liquity still work (mainnet fork their state after oracle updates)", async function() {
@@ -257,6 +253,7 @@ describe("End-to-End Tests - One", function() {
 
     // execute upgrade proposal
     await governance.executeVote(voteCount)
+    await tellor.init()
 
     // ensure old staker can transfer tokens
     await tellor.connect(accounts[10]).transfer(accounts[9].address, BigInt(100E18))
@@ -360,6 +357,7 @@ describe("End-to-End Tests - One", function() {
     await tellor.connect(accounts[1]).init()
 
     await h.expectThrow(tellor.connect(accounts[3]).transfer(accounts[1].address, h.toWei("100"))) // reporter disputed
+    expect(await tellor.allowedToTrade(accounts[3].address, h.toWei("100"))).to.equal(false)
     await tellor.connect(devWallet).teamTransferDisputedStake(accounts[3].address, accounts[4].address)
     expect(await tellor.balanceOf(accounts[3].address)).to.equal(BigInt(acc3BalBefore) - BigInt(h.toWei("100"))) // acct 3 balance updates
     expect(await tellor.balanceOf(accounts[4].address)).to.equal(BigInt(acc4BalBefore) + BigInt(h.toWei("100"))) // acct 4 balance updates

@@ -1,10 +1,8 @@
-const { AbiCoder } = require("@ethersproject/abi");
 const { expect } = require("chai");
 const {ethers} = require("hardhat")
 const h = require("./helpers/helpers");
 var assert = require('assert');
 const web3 = require('web3');
-const { BigNumber } = require("ethers");
 
 describe("Parachute Tests", function() {
 
@@ -14,23 +12,19 @@ describe("Parachute Tests", function() {
     const BIGWALLET = "0xf977814e90da44bfa03b6295a0616a897441acec"
     const CURR_GOV = "0x51d4088d4EeE00Ae4c55f46E0673e9997121DB00"
     const REPORTER = "0x0D4F81320d36d7B7Cf5fE7d1D547f63EcBD1a3E0"
-    const LIQUITY_PRICE_FEED = "0x4c517D4e2C851CA76d7eC94B805269Df0f2201De"
     const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
-    const TELLOR_PROVIDER_AMPL = "0xf5b7562791114fB1A8838A9E8025de4b7627Aa79"
-    const MEDIAN_ORACLE_AMPL = "0x99C9775E076FDF99388C029550155032Ba2d8914"
+    const TRB_QUERY_ID = "0x5c13cd9c97dbb98f2429c101a2a8150e6c7a0ddaff6124ee176a3a411067ded0"
 
     let accounts = null
-    let token = null
     let oracle = null
     let tellor = null
     let governance = null
-    let cfac,ofac,tfac,gfac,parachute,govBig,govTeam
+    let parachute
     let govSigner = null
     let devWallet = null
     let oldOracle
     let newGovernance = null
     let voteCount = null
-    let blocky = null
 
   beforeEach("deploy and setup Tellor360", async function () {
 
@@ -74,13 +68,9 @@ describe("Parachute Tests", function() {
     governance = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor", CURR_GOV)
     oldOracle = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor", TELLORX_ORACLE)
     parachute = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor",PARACHUTE, devWallet);
-
-    const tokenFactory = await ethers.getContractFactory("TestToken")
-    token = await tokenFactory.deploy()
-    await token.deployed()
   
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18))
+    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18), TRB_QUERY_ID)
     await oracle.deployed()
 
     let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
