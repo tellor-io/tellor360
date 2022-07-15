@@ -133,7 +133,6 @@ describe("Function Tests - BaseToken", function() {
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(0)
     await tellor.connect(accounts[1]).approve(accounts[2].address, web3.utils.toWei("20"))
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("20"))
-
     await tellor.connect(devWallet).init()
     expect(await tellor.allowance(accounts[1].address, accounts[2].address)).to.equal(web3.utils.toWei("20"))
     await tellor.connect(accounts[1]).approve(accounts[2].address, web3.utils.toWei("100"))
@@ -142,7 +141,9 @@ describe("Function Tests - BaseToken", function() {
 
   it("allowedToTrade", async function() {
     // init
+    expect(await tellor.allowedToTrade(accounts[3].address, h.toWei("100"))).to.equal(false)
     await tellor.connect(accounts[1]).init()
+    expect(await tellor.allowedToTrade(accounts[1].address, h.toWei("50"))).to.equal(true)
     // disputed reporter
     expect(await tellor.allowedToTrade(accounts[3].address, h.toWei("100"))).to.equal(false)
     expect(await tellor.allowedToTrade(accounts[3].address, 0)).to.equal(true)
@@ -183,7 +184,9 @@ describe("Function Tests - BaseToken", function() {
     expect(await tellor.balanceOfAt(accounts[10].address, blocky2.number)).to.equal(web3.utils.toWei("100"))
 
     await tellor.connect(devWallet).init()
-    expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("100"))    
+    expect(await tellor.balanceOf(accounts[10].address)).to.equal(web3.utils.toWei("100"))   
+    expect(await tellor.balanceOfAt(accounts[10].address, blocky1.number)).to.equal(0)
+    expect(await tellor.balanceOfAt(accounts[10].address, blocky2.number)).to.equal(web3.utils.toWei("100")) 
   })
 
   it("transfer()", async function () {

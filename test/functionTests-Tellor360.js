@@ -200,15 +200,17 @@ describe("Function Tests - Tellor360", function() {
     let owner = await tellor.getAddressVars(h.hash("_OWNER"))
     expect(owner).to.equal(DEV_WALLET)
     //get _OWNER contract balance
-    let oldBalance = BigInt(await tellor.balanceOf(owner))
+    let oldBalance = await tellor.balanceOf(owner)
     //fast forward one day
     h.advanceTime(86399)
     //mint
     await tellor.mintToTeam()
     //_OWNER balance should be greater by 131.5 tokens
-    let newBalance = BigInt(await tellor.balanceOf(owner))
-    expect(newBalance).to.equal(oldBalance + BigInt(1315E17))
-  })
+    let newBalance = await tellor.balanceOf(owner)
+    let val = 1*newBalance - 1*oldBalance - 1*web3.utils.toWei("146.94")
+    assert(val > 0, "owner balance should go up")
+    assert (val < web3.utils.toWei(".001"), "error for rounding")
+  });
 
   it("mintToOracle()", async function () {
     await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')

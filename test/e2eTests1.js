@@ -141,6 +141,8 @@ describe("End-to-End Tests - One", function() {
       await oracle.connect(accounts[9]).submitValue(h.uintTob32(i.toString()), h.uintTob32(i.toString()), 0, '0x')
       await oracle.connect(accounts[10]).submitValue(h.uintTob32(i.toString()), h.uintTob32(i.toString()), 0, '0x')
       await h.advanceTime(3600)
+      let val = await tellor.getLastNewValueById(h.uintTob32(i.toString()))
+      assert(val[0] - i == 0,"val should be correct")
     }
   });
   
@@ -173,10 +175,19 @@ describe("End-to-End Tests - One", function() {
   })
 
   it("Manually verify that Liquity still work (mainnet fork their state after oracle updates)", async function() {
+    let liquityPriceFeed = await ethers.getContractAt("contracts/testing/IPriceFeed.sol:IPriceFeed", LIQUITY_PRICE_FEED)
+    await liquityPriceFeed.fetchPrice()
+    lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
+    expect(lastGoodPrice).to.equal("2075224047850000000000", "Liquity ether price should be correct")
+    
     await governance.executeVote(voteCount)
+
+    await liquityPriceFeed.fetchPrice()
+    lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
+    expect(lastGoodPrice).to.equal("2075224047850000000000", "Liquity ether price should be correct")
+
     await tellor.connect(devWallet).init()
 
-    let liquityPriceFeed = await ethers.getContractAt("contracts/testing/IPriceFeed.sol:IPriceFeed", LIQUITY_PRICE_FEED)
     await liquityPriceFeed.fetchPrice()
     lastGoodPrice = await liquityPriceFeed.lastGoodPrice()
 
@@ -269,7 +280,7 @@ describe("End-to-End Tests - One", function() {
     let medianOracleAmpl = await ethers.getContractAt("contracts/testing/MedianOracle.sol:MedianOracle", MEDIAN_ORACLE_AMPL)
 
     // submit ampl value to tellorx
-    amplValCount = await tellor.getNewValueCountbyRequestId(10)
+    let amplValCount = await tellor.getNewValueCountbyRequestId(10)
     await oldOracle.connect(accounts[4]).submitValue(h.uintTob32(10), h.uintTob32(web3.utils.toWei(".95")), amplValCount, '0x')
     blocky1 = await h.getBlock()
 
@@ -294,7 +305,20 @@ describe("End-to-End Tests - One", function() {
 
     // upgrade to tellor360
     await governance.executeVote(voteCount)
+
+        // ensure correct oracle value pushed to medianOracle contract
+        providerReports0 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 0)
+        providerReports1 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 1)
+        assert(providerReports0.payload == web3.utils.toWei(".95") || providerReports1.payload == web3.utils.toWei(".95"), "tellor report not pushed")
+    
+        
     await tellor.connect(devWallet).init()
+
+        // ensure correct oracle value pushed to medianOracle contract
+        providerReports0 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 0)
+        providerReports1 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 1)
+        assert(providerReports0.payload == web3.utils.toWei(".95") || providerReports1.payload == web3.utils.toWei(".95"), "tellor report not pushed")
+        
 
     // advance time
     await h.advanceTime(86400)
@@ -310,6 +334,25 @@ describe("End-to-End Tests - One", function() {
     providerReports0 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 0)
     providerReports1 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 1)
     assert(providerReports0.payload == web3.utils.toWei("1.23") || providerReports1.payload == web3.utils.toWei("1.23"), "tellor report not pushed")
+    
+    await oracle.connect(accounts[1]).submitValue(h.uintTob32(10), h.uintTob32(web3.utils.toWei(".99")), 1, '0x')
+    blocky1 = await h.getBlock()
+
+    // advance time
+    await h.advanceTime(86400)
+    // push tellor value to ampl provider
+    await tellorProviderAmpl.pushTellor()
+    
+    // ensure correct timestamp pushed to tellor provider
+    tellorReport = await tellorProviderAmpl.tellorReport()
+    assert(tellorReport[0] == blocky1.timestamp || tellorReport[1] == blocky1.timestamp, "tellor report not pushed")
+
+    // ensure correct oracle value pushed to medianOracle contract
+    providerReports0 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 0)
+    providerReports1 = await medianOracleAmpl.providerReports(tellorProviderAmpl.address, 1)
+    assert(providerReports0.payload == web3.utils.toWei(".99") || providerReports1.payload == web3.utils.toWei(".99"), "tellor report not pushed")
+
+  
   })
 
   it("ensure no submissions between 360 execution and init", async function() {
@@ -353,6 +396,8 @@ describe("End-to-End Tests - One", function() {
 
     // execute vote
     await governance.executeVote(voteCount)
+    await h.expectThrow(tellor.connect(accounts[3]).transfer(accounts[1].address, h.toWei("100"))) // reporter disputed
+    expect(await tellor.allowedToTrade(accounts[3].address, h.toWei("100"))).to.equal(false)
     // init
     await tellor.connect(accounts[1]).init()
 
