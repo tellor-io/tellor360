@@ -2,7 +2,6 @@
 pragma solidity 0.8.3;
 
 import "../Tellor360.sol";
-import "hardhat/console.sol";
 
 contract Test360 is Tellor360 {
     event Received(address, uint256);

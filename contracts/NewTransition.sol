@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
-import "./oldContracts/contracts/tellor3/TellorStorage.sol";
 import "./oldContracts/contracts/TellorVars.sol";
 import "./oldContracts/contracts/interfaces/IOracle.sol";
+import "./oldContracts/contracts/tellor3/TellorStorage.sol";
 
 /**
  @author Tellor Inc.
@@ -15,13 +15,6 @@ import "./oldContracts/contracts/interfaces/IOracle.sol";
 contract NewTransition is TellorStorage, TellorVars {
     // Functions
     //Getters
-    /**
-     * @dev Allows users to access the number of decimals
-     */
-    function decimals() external pure returns (uint8) {
-        return 18;
-    }
-
     /**
      * @dev Allows Tellor to read data from the addressVars mapping
      * @param _data is the keccak256("_VARIABLE_NAME") of the variable that is being accessed.
@@ -41,7 +34,7 @@ contract NewTransition is TellorStorage, TellorVars {
      * @return bool whether or not the value was successfully retrieved
      */
     function getLastNewValueById(uint256 _requestId)
-        public
+        external
         view
         returns (uint256, bool)
     {
@@ -175,13 +168,6 @@ contract NewTransition is TellorStorage, TellorVars {
     }
 
     /**
-     * @dev Allows users to access the token's name
-     */
-    function name() external pure returns (string memory) {
-        return "Tellor Tributes";
-    }
-
-    /**
      * @dev Retrieve value from oracle based on timestamp
      * @param _requestId being requested
      * @param _timestamp to retrieve data/value from
@@ -206,33 +192,16 @@ contract NewTransition is TellorStorage, TellorVars {
         }
     }
 
-    /**
-     * @dev Allows users to access the token's symbol
-     */
-    function symbol() external pure returns (string memory) {
-        return "TRB";
-    }
-
-    /**
-     * @dev Getter for the total_supply of tokens
-     * @return uint256 total supply
-     */
-    function totalSupply() external view returns (uint256) {
-        return uints[_TOTAL_SUPPLY];
-    }
-
     // Internal functions
     /**
      * @dev Utilized to help slice a bytes variable into a uint
      * @param _b is the bytes variable to be sliced
-     * @return _x of the sliced uint256
+     * @return _number of the sliced uint256
      */
-    function _sliceUint(bytes memory _b) public pure returns (uint256 _x) {
-        uint256 _number = 0;
+    function _sliceUint(bytes memory _b) internal pure returns (uint256 _number) {
         for (uint256 _i = 0; _i < _b.length; _i++) {
             _number = _number * 2**8;
             _number = _number + uint8(_b[_i]);
         }
-        return _number;
     }
 }

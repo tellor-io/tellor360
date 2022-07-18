@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
-import "./oldContracts/contracts/tellor3/TellorStorage.sol";
 import "./oldContracts/contracts/TellorVars.sol";
 import "./oldContracts/contracts/interfaces/IGovernance.sol";
+import "./oldContracts/contracts/tellor3/TellorStorage.sol";
 
 /**
  @author Tellor Inc.
@@ -12,25 +12,17 @@ import "./oldContracts/contracts/interfaces/IGovernance.sol";
 */
 contract BaseToken is TellorStorage, TellorVars {
     // Events
-    event Approval(
-        address indexed _owner,
-        address indexed _spender,
-        uint256 _value
-    ); // ERC20 Approval event
-    event Transfer(address indexed _from, address indexed _to, uint256 _value); // ERC20 Transfer Event
+    event Approval(address indexed _owner, address indexed _spender, uint256 _value);// ERC20 Approval event
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);// ERC20 Transfer Event
 
     // Functions
-
     /**
      * @dev This function approves a _spender an _amount of tokens to use
      * @param _spender address receiving the allowance
      * @param _amount amount the spender is being approved for
      * @return bool true if spender approved successfully
      */
-    function approve(address _spender, uint256 _amount)
-        external
-        returns (bool)
-    {
+    function approve(address _spender, uint256 _amount) external returns (bool){
         require(_spender != address(0), "ERC20: approve to the zero address");
         _allowances[msg.sender][_spender] = _amount;
         emit Approval(msg.sender, _spender, _amount);
@@ -39,7 +31,7 @@ contract BaseToken is TellorStorage, TellorVars {
 
     /**
      * @notice Allows tellor team to transfer stake of disputed TellorX reporter
-     * NOTE: this does not affect TellorFlex stakes
+     * NOTE: this does not affect TellorFlex stakes, only disputes during 360 transition period
      * @param _from the staker address holding the tokens being transferred
      * @param _to the address of the recipient
      */
@@ -62,10 +54,7 @@ contract BaseToken is TellorStorage, TellorVars {
      * @param _amount amount of tokens to send
      * @return success whether the transfer was successful
      */
-    function transfer(address _to, uint256 _amount)
-        external
-        returns (bool success)
-    {
+    function transfer(address _to, uint256 _amount) external returns (bool success){
         _doTransfer(msg.sender, _to, _amount);
         return true;
     }
@@ -99,11 +88,7 @@ contract BaseToken is TellorStorage, TellorVars {
      * @param _spender address of spender of said user's balance
      * @return uint256 the remaining allowance of tokens granted to the _spender from the _user
      */
-    function allowance(address _user, address _spender)
-        external
-        view
-        returns (uint256)
-    {
+    function allowance(address _user, address _spender) external view returns (uint256){
         return _allowances[_user][_spender];
     }
 
@@ -114,11 +99,7 @@ contract BaseToken is TellorStorage, TellorVars {
      * @param _amount to check if the user can spend
      * @return bool true if they are allowed to spend the amount being checked
      */
-    function allowedToTrade(address _user, uint256 _amount)
-        public
-        view
-        returns (bool)
-    {
+    function allowedToTrade(address _user, uint256 _amount) public view returns (bool){
         if (stakerDetails[_user].currentStatus == 3) {
             // Subtracts the stakeAmount from balance if the _user is staked and disputed in TellorX
             return (balanceOf(_user) - uints[_STAKE_AMOUNT] >= _amount);
@@ -171,6 +152,35 @@ contract BaseToken is TellorStorage, TellorVars {
         }
     }
 
+    /**
+     * @dev Allows users to access the number of decimals
+     */
+    function decimals() external pure returns (uint8) {
+        return 18;
+    }
+
+    /**
+     * @dev Allows users to access the token's name
+     */
+    function name() external pure returns (string memory) {
+        return "Tellor Tributes";
+    }
+
+    /**
+     * @dev Allows users to access the token's symbol
+     */
+    function symbol() external pure returns (string memory) {
+        return "TRB";
+    }
+
+    /**
+     * @dev Getter for the total_supply of tokens
+     * @return uint256 total supply
+     */
+    function totalSupply() external view returns (uint256) {
+        return uints[_TOTAL_SUPPLY];
+    }
+
     // Internal functions
     /**
      * @dev Helps mint new TRB
@@ -196,16 +206,10 @@ contract BaseToken is TellorStorage, TellorVars {
      * @param _to address to transfer to
      * @param _amount amount of tokens to transfer
      */
-    function _doTransfer(
-        address _from,
-        address _to,
-        uint256 _amount
-    ) internal {
-        // Ensure user has a correct balance and to address
+    function _doTransfer(address _from, address _to, uint256 _amount) internal {
         if (_amount == 0) {
             return;
         }
-        require(_to != address(0), "Receiver is 0 address");
         require(
             allowedToTrade(_from, _amount),
             "Should have sufficient balance to trade"
