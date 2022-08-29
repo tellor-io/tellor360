@@ -125,6 +125,8 @@ describe("Function Tests - Tellor360", function() {
 
   it("constructor()", async function() {
     expect(await controller.getAddressVars(h.hash("_ORACLE_CONTRACT_FOR_INIT"))).to.equal(oracle.address)
+    controllerFactory = await ethers.getContractFactory("Test360")
+    await h.expectThrow(controllerFactory.deploy('0x0000000000000000000000000000000000000000'))
   })
 
   it("init()", async function () {  

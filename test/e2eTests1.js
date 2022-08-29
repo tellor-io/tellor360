@@ -410,4 +410,16 @@ describe("End-to-End Tests - One", function() {
     await h.expectThrow(tellor.connect(devWallet).teamTransferDisputedStake(accounts[3].address, accounts[4].address)) // team can't call again
     await tellor.connect(accounts[3]).transfer(accounts[4].address, h.toWei("1"))
   })
+
+  it("Time based rewards after transition", async function() {
+    // execute vote
+    oldOracleBalance0 = await tellor.balanceOf(oldOracle.address)
+    await governance.executeVote(voteCount)
+    // init
+    await tellor.connect(devWallet).init()
+    // ensure can't submit to old oracle
+    await h.expectThrow(oldOracle.connect(accounts[4]).submitValue(h.uintTob32(70), h.uintTob32(456), 2, '0x'))
+    oldOracleBalance1 = await tellor.balanceOf(oldOracle.address)
+    assert(oldOracleBalance1.toString() == oldOracleBalance0.toString(), "old oracle balance changed after update")
+  })
 });

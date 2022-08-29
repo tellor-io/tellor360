@@ -26,6 +26,7 @@ contract Tellor360 is BaseToken, NewTransition {
      * tellorX oracle
      */
     constructor(address _flexAddress) {
+        require(_flexAddress != address(0), "oracle address must be non-zero");
         addresses[keccak256("_ORACLE_CONTRACT_FOR_INIT")] = _flexAddress;
     }
 
