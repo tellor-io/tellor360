@@ -46,7 +46,8 @@ contract Tellor360 is BaseToken, NewTransition {
         //on switch over, require tellorFlex values are over 12 hours old
         //then when we switch, the governance switch can be instantaneous
         uint256 _id = 1;
-        uint256 _firstTimestamp = IOracle(_flexAddress).getTimestampbyQueryIdandIndex(bytes32(_id), 0);
+        uint256 _firstTimestamp = IOracle(_flexAddress)
+            .getTimestampbyQueryIdandIndex(bytes32(_id), 0);
         require(
             block.timestamp - _firstTimestamp >= 12 hours,
             "contract should be at least 12 hours old"
