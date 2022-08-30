@@ -13,7 +13,7 @@ describe("Parachute Tests", function() {
     const CURR_GOV = "0x51d4088d4EeE00Ae4c55f46E0673e9997121DB00"
     const REPORTER = "0x0D4F81320d36d7B7Cf5fE7d1D547f63EcBD1a3E0"
     const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
-    const TRB_QUERY_ID = "0x5c13cd9c97dbb98f2429c101a2a8150e6c7a0ddaff6124ee176a3a411067ded0"
+    const TRB_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000032"
     const ETH_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000001"
 
     let accounts = null
@@ -71,7 +71,7 @@ describe("Parachute Tests", function() {
     parachute = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor",PARACHUTE, devWallet);
   
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18), TRB_QUERY_ID, BigInt(1000E18), ETH_QUERY_ID)
+    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18), 6, TRB_QUERY_ID, BigInt(1000E18), 6, ETH_QUERY_ID)
     await oracle.deployed()
 
     let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
