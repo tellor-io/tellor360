@@ -30,6 +30,9 @@ contract TellorFlex {
     uint256 public totalStakeAmount; // total amount of tokens locked in contract (via stake)
     uint256 public totalStakers; // total number of stakers with at least stakeAmount staked, not exact
     uint256 public totalTimeBasedRewardsBalance; // amount of TBR deposited into Tellor Flex
+    uint256 public baseTokenPrice; // base token price, used for recording report gas costs
+    bytes32 public baseTokenPriceQueryId; // base token SpotPrice queryId, used for recording report gas costs
+    uint256 public stakingTokenPrice; // staking token price, used for recording report gas costs
 
     mapping(bytes32 => Report) private reports; // mapping of query IDs to a report
     mapping(address => StakeInfo) private stakerDetails; // mapping from a persons address to their staking info
@@ -42,6 +45,7 @@ contract TellorFlex {
         mapping(uint256 => bytes) valueByTimestamp; // mapping of timestamps to values
         mapping(uint256 => address) reporterByTimestamp; // mapping of timestamps to reporters
         mapping(uint256 => bool) isDisputed;
+        mapping(uint256 => uint256) gasUsed; // mapping of timestamps to estimated gas used in terms of staking token
     }
 
     struct StakeInfo {
@@ -58,7 +62,6 @@ contract TellorFlex {
     }
 
     // Events
-    event NewGovernanceAddress(address _newGovernanceAddress);
     event NewReport(
         bytes32 indexed _queryId,
         uint256 _time,
@@ -84,23 +87,33 @@ contract TellorFlex {
      * @param _token address of token used for staking and rewards
      * @param _reportingLock base amount of time (seconds) before reporter is able to report again
      * @param _stakeAmountDollarTarget fixed USD amount that stakeAmount targets on updateStakeAmount
-     * @param _priceStakingToken current price of staking token in USD
+     * @param _stakingTokenPrice current price of staking token in USD
      * @param _stakingTokenPriceQueryId queryId where staking token price is reported
      */
     constructor(
         address _token,
         uint256 _reportingLock,
         uint256 _stakeAmountDollarTarget,
-        uint256 _priceStakingToken,
-        bytes32 _stakingTokenPriceQueryId
+        uint256 _stakingTokenPrice,
+        bytes32 _stakingTokenPriceQueryId,
+        uint256 _baseTokenPrice,
+        bytes32 _baseTokenPriceQueryId
     ) {
         require(_token != address(0), "must set token address");
+        require(_baseTokenPrice > 0, "must set base token price");
+        require(_stakingTokenPrice > 0, "must set staking token price");
+        require(_reportingLock > 0, "must set reporting lock");
+        require(_stakingTokenPriceQueryId != bytes32(0), "must set staking token price queryId");
+        require(_baseTokenPriceQueryId != bytes32(0), "must set base token price queryId");
         token = IERC20(_token);
         owner = msg.sender;
         reportingLock = _reportingLock;
         stakeAmountDollarTarget = _stakeAmountDollarTarget;
-        stakeAmount = (_stakeAmountDollarTarget * 1e18) / _priceStakingToken;
+        stakeAmount = (_stakeAmountDollarTarget * 1e18) / _stakingTokenPrice;
+        stakingTokenPrice = _stakingTokenPrice;
         stakingTokenPriceQueryId = _stakingTokenPriceQueryId;
+        baseTokenPrice = _baseTokenPrice;
+        baseTokenPriceQueryId = _baseTokenPriceQueryId;
     }
 
     /**
@@ -139,6 +152,7 @@ contract TellorFlex {
      * @param _amount amount of tokens to stake
      */
     function depositStake(uint256 _amount) external {
+        require(governance != address(0), "governance address not set");
         StakeInfo storage _staker = stakerDetails[msg.sender];
         uint256 _stakedBalance = _staker.stakedBalance;
         uint256 _lockedBalance = _staker.lockedBalance;
@@ -166,7 +180,7 @@ contract TellorFlex {
                     abi.encodeWithSignature("getVoteCount()")
                 );
                 if (_success) {
-                    _staker.startVoteCount = uint256(abi.decode(_returnData, (uint256))) - _staker.startVoteCount;
+                    _staker.startVoteCount = uint256(abi.decode(_returnData, (uint256)));
                 }
                 (_success,_returnData) = governance.call(
                     abi.encodeWithSignature("getVoteTallyByAddress(address)",msg.sender)
@@ -268,6 +282,7 @@ contract TellorFlex {
         uint256 _nonce,
         bytes calldata _queryData
     ) external {
+        uint256 _startGas = gasleft();
         require(keccak256(_value) != keccak256(""), "value must be submitted");
         Report storage _report = reports[_queryId];
         require(
@@ -325,6 +340,8 @@ contract TellorFlex {
             _queryData,
             msg.sender
         );
+        // Record gas used, used for capping autopay rewards
+        _report.gasUsed[block.timestamp] = (tx.gasprice * (_startGas + 21000 - gasleft()) * baseTokenPrice) / stakingTokenPrice;
     }
 
     /**
@@ -332,18 +349,31 @@ contract TellorFlex {
      * 12+-hour-old staking token price from the oracle
      */
     function updateStakeAmount() external {
+        // get staking token price
         (bool _valFound, bytes memory _val, ) = getDataBefore(
             stakingTokenPriceQueryId,
             block.timestamp - 12 hours
         );
         if (_valFound) {
-            uint256 _priceTRB = abi.decode(_val, (uint256));
+            uint256 _stakingTokenPrice = abi.decode(_val, (uint256));
             require(
-                _priceTRB >= 0.01 ether && _priceTRB < 1000000 ether,
-                "invalid trb price"
+                _stakingTokenPrice >= 0.01 ether && _stakingTokenPrice < 1000000 ether,
+                "invalid staking token price"
             );
-            stakeAmount = (stakeAmountDollarTarget * 1e18) / _priceTRB;
+            stakeAmount = (stakeAmountDollarTarget * 1e18) / _stakingTokenPrice;
+            stakingTokenPrice = _stakingTokenPrice;
             emit NewStakeAmount(stakeAmount);
+        }
+        // get base token price
+        (_valFound, _val, ) = getDataBefore(
+            baseTokenPriceQueryId,
+            block.timestamp - 12 hours
+        );
+        if (_valFound) {
+            uint256 _baseTokenPrice = abi.decode(_val, (uint256));
+            if(_baseTokenPrice >= 0.01 ether && _baseTokenPrice < 1000000000 ether) {
+                baseTokenPrice = _baseTokenPrice;
+            }
         }
     }
 
@@ -435,6 +465,16 @@ contract TellorFlex {
         _timestampRetrieved = getTimestampbyQueryIdandIndex(_queryId, _index);
         _value = retrieveData(_queryId, _timestampRetrieved);
         return (true, _value, _timestampRetrieved);
+    }
+
+    /**
+     * @dev Retrieves report gas cost estimate in terms of staking token
+     * @param _queryId is the datafeed unique identifier
+     * @param _timestamp is the timestamp of the report
+     * @return uint256 gas cost estimate in terms of staking token
+     */
+    function getGasUsedByReport(bytes32 _queryId, uint256 _timestamp) external view returns (uint256) {
+        return reports[_queryId].gasUsed[_timestamp];
     }
 
     /**
@@ -910,10 +950,13 @@ contract TellorFlex {
                 );
                 if(_success){
                     uint256 _voteTally = abi.decode(_returnData,(uint256));
-                    _pendingReward =
+                    uint256 _tempPendingReward =
                         (_pendingReward *
                             (_voteTally - _staker.startVoteTally)) /
                         _numberOfVotes;
+                    if (_tempPendingReward < _pendingReward) {
+                        _pendingReward = _tempPendingReward;
+                    }
                 }
             }
             stakingRewardsBalance -= _pendingReward;
