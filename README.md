@@ -12,6 +12,8 @@
   </a>
 </p>
 
+[![Linting](https://github.com/tellor-io/tellorX/actions/workflows/linting.yml/badge.svg)](https://github.com/tellor-io/tellorX/actions/workflows/linting.yml)
+[![Tests](https://github.com/tellor-io/tellorX/actions/workflows/tests.yml/badge.svg)](https://github.com/tellor-io/tellorX/actions/workflows/tests.ymli)
 
 ## Overview <a name="overview"> </a>  
 
