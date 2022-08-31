@@ -1,5 +1,3 @@
-[![Tests](https://github.com/tellor-io/tellor360/actions/workflows/tests.yml/badge.svg)](https://github.com/tellor-io/tellor360/actions/workflows/tests.ymli)
-
 <p align="center">
   <a href='https://www.tellor.io/'>
     <img src= 'https://raw.githubusercontent.com/tellor-io/TellorBrandMaterials/master/Swoosh%20and%20wordmark%20new/SwooshWordmark_Horizontal_Grey.png' height="200" alt='tellor.io' />
@@ -12,8 +10,8 @@
   </a>
 </p>
 
-[![Linting](https://github.com/tellor-io/tellorX/actions/workflows/linting.yml/badge.svg)](https://github.com/tellor-io/tellorX/actions/workflows/linting.yml)
-[![Tests](https://github.com/tellor-io/tellorX/actions/workflows/tests.yml/badge.svg)](https://github.com/tellor-io/tellorX/actions/workflows/tests.ymli)
+[![Linting](https://github.com/tellor-io/tellorX/actions/workflows/linting.yml/badge.svg)](https://github.com/tellor-io/tellor360/actions/workflows/linting.yml)
+[![Tests](https://github.com/tellor-io/tellorX/actions/workflows/tests.yml/badge.svg)](https://github.com/tellor-io/tellor360/actions/workflows/tests.ymli)
 
 ## Overview <a name="overview"> </a>  
 
