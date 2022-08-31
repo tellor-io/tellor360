@@ -208,11 +208,10 @@ describe("Function Tests - Tellor360", function() {
     h.advanceTime(86399)
     //mint
     await tellor.mintToTeam()
-    //_OWNER balance should be greater by 131.5 tokens
+    //_OWNER balance should be greater by 146.94 tokens
     let newBalance = await tellor.balanceOf(owner)
-    let val = 1*newBalance - 1*oldBalance - 1*web3.utils.toWei("146.94")
-    assert(val > 0, "owner balance should go up")
-    assert (val < web3.utils.toWei(".001"), "error for rounding")
+    let val = BigInt(newBalance) - BigInt(oldBalance) - BigInt(web3.utils.toWei("146.94"))
+    assert(val == 0, "mintToTeam should work correctly")
   });
 
   it("mintToOracle()", async function () {
@@ -227,9 +226,9 @@ describe("Function Tests - Tellor360", function() {
     h.advanceTime(86399)
     //mint
     await tellor.mintToOracle()
-    //_ORACLE_CONTRACT balance should be greater by 131.5 tokens
+    //_ORACLE_CONTRACT balance should be greater by 146.94 tokens
     let newBalance = BigInt(await tellor.balanceOf(oracle.address))
-    expect(newBalance).to.equal(oldBalance + BigInt(14694E16))
+    expect(newBalance).to.equal(oldBalance + BigInt(web3.utils.toWei("146.94")))
   });
 
   it("transferOutOfContract()", async function () {
