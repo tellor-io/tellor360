@@ -37,7 +37,7 @@
     "dotenv": "^10.0.0",
     "hardhat-contract-sizer": "^2.0.3",
     "solidity-coverage": "^0.7.17",
-    "usingtellor": "^4.0.7",
+    "usingtellor": "github:tellor-io/usingtellor#360audit",
     "web3": "^1.5.1"
   }
 }

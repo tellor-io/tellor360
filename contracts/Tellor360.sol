@@ -26,6 +26,7 @@ contract Tellor360 is BaseToken, NewTransition {
      * tellorX oracle
      */
     constructor(address _flexAddress) {
+        require(_flexAddress != address(0), "oracle address must be non-zero");
         addresses[keccak256("_ORACLE_CONTRACT_FOR_INIT")] = _flexAddress;
     }
 
@@ -45,7 +46,8 @@ contract Tellor360 is BaseToken, NewTransition {
         //on switch over, require tellorFlex values are over 12 hours old
         //then when we switch, the governance switch can be instantaneous
         uint256 _id = 1;
-        uint256 _firstTimestamp = IOracle(_flexAddress).getTimestampbyQueryIdandIndex(bytes32(_id), 0);
+        uint256 _firstTimestamp = IOracle(_flexAddress)
+            .getTimestampbyQueryIdandIndex(bytes32(_id), 0);
         require(
             block.timestamp - _firstTimestamp >= 12 hours,
             "contract should be at least 12 hours old"

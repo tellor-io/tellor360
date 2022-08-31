@@ -198,7 +198,11 @@ contract NewTransition is TellorStorage, TellorVars {
      * @param _b is the bytes variable to be sliced
      * @return _number of the sliced uint256
      */
-    function _sliceUint(bytes memory _b) internal pure returns (uint256 _number) {
+    function _sliceUint(bytes memory _b)
+        internal
+        pure
+        returns (uint256 _number)
+    {
         for (uint256 _i = 0; _i < _b.length; _i++) {
             _number = _number * 2**8;
             _number = _number + uint8(_b[_i]);
