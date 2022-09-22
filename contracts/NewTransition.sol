@@ -4,6 +4,7 @@ pragma solidity 0.8.3;
 import "./oldContracts/contracts/TellorVars.sol";
 import "./oldContracts/contracts/interfaces/IOracle.sol";
 import "./oldContracts/contracts/tellor3/TellorStorage.sol";
+import "hardhat/console.sol";
 
 /**
  @author Tellor Inc.
@@ -82,9 +83,10 @@ contract NewTransition is TellorStorage, TellorVars {
         view
         returns (uint256)
     {
+        (bytes32 _queryId, ) = _getQueryIdAndDecimals(_requestId);
         IOracle _oracle = IOracle(addresses[_ORACLE_CONTRACT]);
         // try the new oracle first
-        try _oracle.getNewValueCountbyQueryId(bytes32(_requestId)) returns (
+        try _oracle.getNewValueCountbyQueryId(_queryId) returns (
             uint256 _valueCount
         ) {
             if (_valueCount == 0) {
@@ -92,22 +94,22 @@ contract NewTransition is TellorStorage, TellorVars {
             }
             // if last value is disputed, subtract 1 from the count until a non-disputed value is found
             uint256 _timestamp = _oracle.getTimestampbyQueryIdandIndex(
-                bytes32(_requestId),
+                _queryId,
                 _valueCount - 1
             );
             while (
-                _oracle.isInDispute(bytes32(_requestId), _timestamp) &&
+                _oracle.isInDispute(_queryId, _timestamp) &&
                 _valueCount > 1
             ) {
                 _valueCount--;
                 _timestamp = _oracle.getTimestampbyQueryIdandIndex(
-                    bytes32(_requestId),
+                    _queryId,
                     _valueCount - 1
                 );
             }
             if (
                 _valueCount == 1 &&
-                _oracle.isInDispute(bytes32(_requestId), _timestamp)
+                _oracle.isInDispute(_queryId, _timestamp)
             ) {
                 return 0;
             }
@@ -131,9 +133,10 @@ contract NewTransition is TellorStorage, TellorVars {
         view
         returns (uint256)
     {
+        (bytes32 _queryId, ) = _getQueryIdAndDecimals(_requestId);
         try
             IOracle(addresses[_ORACLE_CONTRACT]).getTimestampbyQueryIdandIndex(
-                bytes32(_requestId),
+                _queryId,
                 _index
             )
         returns (uint256 _val) {
@@ -167,6 +170,62 @@ contract NewTransition is TellorStorage, TellorVars {
         return migrated[_addy];
     }
 
+    // /**
+    //  * @dev Retrieve value from oracle based on timestamp
+    //  * @param _requestId being requested
+    //  * @param _timestamp to retrieve data/value from
+    //  * @return uint256 value for timestamp submitted
+    //  */
+    // function retrieveData(uint256 _requestId, uint256 _timestamp)
+    //     public
+    //     view
+    //     returns (uint256)
+    // {
+    //     try
+    //         IOracle(addresses[_ORACLE_CONTRACT]).retrieveData(
+    //             bytes32(_requestId),
+    //             _timestamp
+    //         )
+    //     returns (bytes memory _val) {
+    //         return _sliceUint(_val);
+    //     } catch {
+    //         bytes memory _val = IOracle(addresses[_ORACLE_CONTRACT])
+    //             .getValueByTimestamp(bytes32(_requestId), _timestamp);
+    //         return _sliceUint(_val);
+    //     }
+    // }
+
+    // function retrieveData(uint256 _requestId, uint256 _timestamp)
+    //     public 
+    //     view 
+    //     returns(uint256) {
+    //         try IOracle(addresses[_ORACLE_CONTRACT]).getValueByTimestamp(bytes32(_requestId), _timestamp) returns (bytes memory _val) {
+    //             return _sliceUint(_val);
+    //         } catch {
+    //             bytes memory _val;
+    //             if(_requestId == 1) {
+    //                 (, _val, ) = IOracle(addresses[_ORACLE_CONTRACT]).getDataBefore(bytes32(_requestId), block.timestamp - 15 minutes);
+    //             } else {
+    //                 _val = IOracle(addresses[_ORACLE_CONTRACT]).retrieveData(bytes32(_requestId), _timestamp);
+    //             }
+    //             return _sliceUint(_val);
+    //         }
+    //     }
+
+    // function retrieveData(uint256 _requestId, uint256 _timestamp)
+    //     public 
+    //     view 
+    //     returns(uint256) {
+    //         (bytes32 _queryId, ) = _getQueryIdAndDecimals(_requestId);
+    //         console.log("@NEWTRANSITION: retrieveData: _queryId");
+    //         console.logBytes32(_queryId);
+    //         (, bytes memory _val, ) = IOracle(addresses[_ORACLE_CONTRACT]).getDataBefore(_queryId, block.timestamp - 1 minutes);
+    //         console.log("@NEWTRANSITION: retrieveData: _val: ");
+    //         console.logBytes(_val);
+    //         return _sliceUint(_val);
+            
+    //     }
+
     /**
      * @dev Retrieve value from oracle based on timestamp
      * @param _requestId being requested
@@ -178,19 +237,37 @@ contract NewTransition is TellorStorage, TellorVars {
         view
         returns (uint256)
     {
+        console.log("@TRANSITION: retrieveData");
+        (bytes32 _queryId, uint256 _decimalsAdjustment) = _getQueryIdAndDecimals(
+            _requestId
+        );
+        console.log("@NewTransition: retrieveData: _queryId");
+        console.logBytes32(_queryId);
         try
-            IOracle(addresses[_ORACLE_CONTRACT]).retrieveData(
+            IOracle(addresses[_ORACLE_CONTRACT]).getValueByTimestamp(
                 bytes32(_requestId),
                 _timestamp
             )
         returns (bytes memory _val) {
             return _sliceUint(_val);
         } catch {
-            bytes memory _val = IOracle(addresses[_ORACLE_CONTRACT])
-                .getValueByTimestamp(bytes32(_requestId), _timestamp);
+            bytes memory _val;
+            if (bytes32(_requestId) == bytes32(uint256(1))) {
+                (, _val, ) = IOracle(addresses[_ORACLE_CONTRACT])
+                    .getDataBefore(_queryId, block.timestamp - 15 minutes);
+                console.log("@NewTransition: retrieveData: getDataBefore");
+            } else {
+                 _val = IOracle(addresses[_ORACLE_CONTRACT])
+                .retrieveData(_queryId, _timestamp);
+                console.log("@NewTransition: retrieveData: retrieveData");
+            }
+            console.log("@NewTransition: retrieveData: _val");
+            console.log(_sliceUint(_val));
             return _sliceUint(_val);
         }
     }
+
+
 
     // Internal functions
     /**
@@ -207,5 +284,25 @@ contract NewTransition is TellorStorage, TellorVars {
             _number = _number * 2**8;
             _number = _number + uint8(_b[_i]);
         }
+    }
+
+    function _getQueryIdAndDecimals(uint256 _requestId) internal pure returns (bytes32, uint256) {
+        bytes32 _queryId;
+        uint256 _decimalsAdjustment;
+        if(_requestId == 1) {
+            _queryId = 0x83a7f3d48786ac2667503a61e8c415438ed2922eb86a2906e4ee66d9a2ce4992; // SpotPrice(eth, usd)
+            // _queryId = bytes32(_requestId);
+            _decimalsAdjustment = 12;
+        } else if(_requestId == 16) {
+            _queryId = 0x0d12ad49193163bbbeff4e6db8294ced23ff8605359fd666799d4e25a3aa0e3a; // AmpleforthCustomSpotPrice()
+            _decimalsAdjustment = 0;
+        } else if(_requestId == 41) {
+            _queryId = 0x612ec1d9cee860bb87deb6370ed0ae43345c9302c085c1dfc4c207cbec2970d7; // AmpleforthUSPCE()
+            _decimalsAdjustment = 0;
+        } else {
+            _queryId = bytes32(_requestId);
+            _decimalsAdjustment = 0;
+        }
+        return(_queryId, _decimalsAdjustment);
     }
 }

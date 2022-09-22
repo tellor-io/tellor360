@@ -43,15 +43,6 @@ contract Tellor360 is BaseToken, NewTransition {
         address _flexAddress = _newController.getAddressVars(
             keccak256("_ORACLE_CONTRACT_FOR_INIT")
         );
-        //on switch over, require tellorFlex values are over 12 hours old
-        //then when we switch, the governance switch can be instantaneous
-        uint256 _id = 1;
-        uint256 _firstTimestamp = IOracle(_flexAddress)
-            .getTimestampbyQueryIdandIndex(bytes32(_id), 0);
-        require(
-            block.timestamp - _firstTimestamp >= 12 hours,
-            "contract should be at least 12 hours old"
-        );
         addresses[_ORACLE_CONTRACT] = _flexAddress; //used by Liquity+AMPL for this contract's reads
         //init minting uints (timestamps)
         uints[keccak256("_LAST_RELEASE_TIME_TEAM")] = block.timestamp;
@@ -140,12 +131,6 @@ contract Tellor360 is BaseToken, NewTransition {
                 block.timestamp >
                     uints[keccak256("_TIME_PROPOSED_UPDATED")] + 7 days,
                 "must wait 7 days after proposing new oracle"
-            );
-            uint256 _firstTimestamp = IOracle(_proposedOracle)
-                .getTimestampbyQueryIdandIndex(bytes32(uint256(1)), 0);
-            require(
-                block.timestamp - _firstTimestamp >= 12 hours,
-                "contract should be at least 12 hours old"
             );
             addresses[_ORACLE_CONTRACT] = _proposedOracle;
             emit NewOracleAddress(_proposedOracle, block.timestamp);
