@@ -17,7 +17,10 @@ describe("End-to-End Tests - Two", function() {
     const LIQUITY_PRICE_FEED = "0x4c517D4e2C851CA76d7eC94B805269Df0f2201De"
     const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
     const TRB_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000032"
-    const ETH_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000001"
+    const abiCoder = new ethers.utils.AbiCoder();
+    const ETH_QUERY_DATA_ARGS = abiCoder.encode(["string", "string"], ["eth", "usd"]);
+    const ETH_QUERY_DATA = abiCoder.encode(["string", "bytes"], ["SpotPrice", ETH_QUERY_DATA_ARGS]);
+    const ETH_QUERY_ID = web3.utils.keccak256(ETH_QUERY_DATA);
 
     let accounts = null
     let oracle = null
@@ -98,7 +101,7 @@ describe("End-to-End Tests - Two", function() {
     await tellor.connect(devWallet).transfer(accounts[5].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[5]).approve(oracle.address, BigInt(10E18))
     await oracle.connect(accounts[5]).depositStake(BigInt(10E18))
-    await oracle.connect(accounts[5]).submitValue(h.uintTob32(1), h.uintTob32(1000), 0, '0x')
+    await oracle.connect(accounts[5]).submitValue(ETH_QUERY_ID, h.uintTob32(1000), 0, ETH_QUERY_DATA)
 
     //tellorx staker
     await tellor.connect(devWallet).transfer(accounts[2].address, web3.utils.toWei("100"));

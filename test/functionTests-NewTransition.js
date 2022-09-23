@@ -15,7 +15,10 @@ describe("Function Tests - NewTransition", function() {
   const REPORTER = "0x0D4F81320d36d7B7Cf5fE7d1D547f63EcBD1a3E0"
   const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
   const TRB_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000032"
-  const ETH_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000001"
+  const abiCoder = new ethers.utils.AbiCoder();
+  const ETH_QUERY_DATA_ARGS = abiCoder.encode(["string", "string"], ["eth", "usd"]);
+  const ETH_QUERY_DATA = abiCoder.encode(["string", "bytes"], ["SpotPrice", ETH_QUERY_DATA_ARGS]);
+  const ETH_QUERY_ID = web3.utils.keccak256(ETH_QUERY_DATA);
 
   let accounts = null
   let oracle = null
@@ -106,7 +109,7 @@ describe("Function Tests - NewTransition", function() {
     await tellor.connect(devWallet).transfer(accounts[5].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[5]).approve(oracle.address, BigInt(10E18))
     await oracle.connect(accounts[5]).depositStake(BigInt(10E18))
-    await oracle.connect(accounts[5]).submitValue(h.uintTob32(1), h.uintTob32(1000), 0, '0x')
+    await oracle.connect(accounts[5]).submitValue(ETH_QUERY_ID, h.uintTob32(1000), 0, ETH_QUERY_DATA)
     blockyNew3 = await h.getBlock()
 
     //tellorx staker
@@ -179,8 +182,6 @@ describe("Function Tests - NewTransition", function() {
   })
 
   it("getNewCurrentVariables()", async function () {
-    abiCoder = new ethers.utils.AbiCoder()
-
     // retrieve from old oracle
     currentVars = await tellor.getNewCurrentVariables()
     encodedTime = abiCoder.encode(["uint256"], [blockyOld1.timestamp])

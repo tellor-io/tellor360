@@ -5,7 +5,7 @@ pragma solidity 0.6.11;
 import "./ITellorCaller.sol";
 import "./ITellor.sol";
 import "./SafeMath.sol";
-import "hardhat/console.sol";
+
 /*
 * This contract has a single external function that calls Tellor: getTellorCurrentValue(). 
 *
@@ -48,9 +48,6 @@ contract TellorCaller is ITellorCaller {
         uint256 _time =
             tellor.getTimestampbyRequestIDandIndex(_requestId, _count.sub(1));
         uint256 _value = tellor.retrieveData(_requestId, _time);
-        console.log("@TellorCaller.getTellorCurrentValue(): _value: %s", _value);
-        console.log("@TellorCaller.getTellorCurrentValue(): _time: %s", _time);
-        console.log("@TellorCaller.getTellorCurrentValue(): _count: %s", _count);
         if (_value > 0) return (true, _value, _time);
         return (false, 0, _time);
     }

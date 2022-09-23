@@ -14,7 +14,10 @@ describe("Parachute Tests", function() {
     const REPORTER = "0x0D4F81320d36d7B7Cf5fE7d1D547f63EcBD1a3E0"
     const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
     const TRB_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000032"
-    const ETH_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000001"
+    const abiCoder = new ethers.utils.AbiCoder();
+    const ETH_QUERY_DATA_ARGS = abiCoder.encode(["string", "string"], ["eth", "usd"]);
+    const ETH_QUERY_DATA = abiCoder.encode(["string", "bytes"], ["SpotPrice", ETH_QUERY_DATA_ARGS]);
+    const ETH_QUERY_ID = web3.utils.keccak256(ETH_QUERY_DATA);
 
     let accounts = null
     let oracle = null
@@ -84,7 +87,7 @@ describe("Parachute Tests", function() {
     await tellor.connect(accounts[1]).approve(oracle.address, BigInt(10E18))
 
     await oracle.connect(accounts[1]).depositStake(BigInt(10E18))
-    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    await oracle.connect(accounts[1]).submitValue(ETH_QUERY_ID, h.bytes(100), 0, ETH_QUERY_DATA)
     blocky = await h.getBlock()
 
     //tellorx staker
