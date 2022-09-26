@@ -162,7 +162,7 @@ describe("Parachute Tests", function() {
     expect(await tellor.getAddressVars(h.hash("_DEITY"))).to.equal(DEV_WALLET)
     await tellor.connect(devWallet).changeDeity(parachute.address)
     expect(await tellor.getAddressVars(h.hash("_DEITY"))).to.equal(parachute.address)
-    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    await oracle.connect(accounts[1]).submitValue(ETH_QUERY_ID, h.bytes(100), 0, ETH_QUERY_DATA)
     await tellor.connect(devWallet).transfer(accounts[1].address, h.toWei("100"))
   })
 
@@ -176,7 +176,7 @@ describe("Parachute Tests", function() {
     expect(await tellor.getAddressVars(h.hash("_DEITY"))).to.equal(DEV_WALLET)
     await tellor.connect(devWallet).changeDeity(parachute.address)
     expect(await tellor.getAddressVars(h.hash("_DEITY"))).to.equal(parachute.address)
-    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    await oracle.connect(accounts[1]).submitValue(ETH_QUERY_ID, h.bytes(100), 0, ETH_QUERY_DATA)
     await tellor.connect(devWallet).transfer(accounts[1].address, h.toWei("100"))
   })
 

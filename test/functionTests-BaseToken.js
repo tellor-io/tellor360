@@ -15,6 +15,7 @@ describe("Function Tests - BaseToken", function() {
   const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
   const TRB_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000032"
   const abiCoder = new ethers.utils.AbiCoder();
+  const keccak256 = web3.utils.keccak256;
   const ETH_QUERY_DATA_ARGS = abiCoder.encode(["string", "string"], ["eth", "usd"]);
   const ETH_QUERY_DATA = abiCoder.encode(["string", "bytes"], ["SpotPrice", ETH_QUERY_DATA_ARGS]);
   const ETH_QUERY_ID = web3.utils.keccak256(ETH_QUERY_DATA);
@@ -85,13 +86,13 @@ describe("Function Tests - BaseToken", function() {
     await tellor.connect(devWallet).transfer(accounts[1].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[1]).approve(oracle.address, BigInt(10E18))
     await oracle.connect(accounts[1]).depositStake(BigInt(10E18))
-    await oracle.connect(accounts[1]).submitValue(h.uintTob32(70), h.bytes(99), 0, '0x')
+    await oracle.connect(accounts[1]).submitValue(keccak256(h.uintTob32(70)), h.bytes(99), 0, h.uintTob32(70))
     blockyNew1 = await h.getBlock()
 
     await tellor.connect(devWallet).transfer(accounts[6].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[6]).approve(oracle.address, BigInt(10E18))
     await oracle.connect(accounts[6]).depositStake(BigInt(10E18))
-    await oracle.connect(accounts[6]).submitValue(h.uintTob32(70), h.bytes(100), 0, '0x')
+    await oracle.connect(accounts[6]).submitValue(keccak256(h.uintTob32(70)), h.bytes(100), 0, h.uintTob32(70))
     blockyNew2 = await h.getBlock()
 
     // submit 1 queryId=1 value to new flex (required for 360 init)

@@ -231,7 +231,7 @@ contract NewTransition is TellorStorage, TellorVars {
         if(_requestId == 1) {
             _queryId = 0x83a7f3d48786ac2667503a61e8c415438ed2922eb86a2906e4ee66d9a2ce4992; // SpotPrice(eth, usd)
             _decimalsAdjustment = 12;
-        } else if(_requestId == 16) {
+        } else if(_requestId == 10) {
             _queryId = 0x0d12ad49193163bbbeff4e6db8294ced23ff8605359fd666799d4e25a3aa0e3a; // AmpleforthCustomSpotPrice(0x)
             _decimalsAdjustment = 0;
         } else if(_requestId == 41) {

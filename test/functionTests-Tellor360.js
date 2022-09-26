@@ -15,6 +15,7 @@ describe("Function Tests - Tellor360", function() {
   const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
   const TRB_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000032"
   const abiCoder = new ethers.utils.AbiCoder();
+  const keccak256 = web3.utils.keccak256;
   const ETH_QUERY_DATA_ARGS = abiCoder.encode(["string", "string"], ["eth", "usd"]);
   const ETH_QUERY_DATA = abiCoder.encode(["string", "bytes"], ["SpotPrice", ETH_QUERY_DATA_ARGS]);
   const ETH_QUERY_ID = web3.utils.keccak256(ETH_QUERY_DATA);

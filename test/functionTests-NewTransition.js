@@ -16,6 +16,7 @@ describe("Function Tests - NewTransition", function() {
   const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
   const TRB_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000032"
   const abiCoder = new ethers.utils.AbiCoder();
+  const keccak256 = ethers.utils.keccak256;
   const ETH_QUERY_DATA_ARGS = abiCoder.encode(["string", "string"], ["eth", "usd"]);
   const ETH_QUERY_DATA = abiCoder.encode(["string", "bytes"], ["SpotPrice", ETH_QUERY_DATA_ARGS]);
   const ETH_QUERY_ID = web3.utils.keccak256(ETH_QUERY_DATA);
@@ -96,13 +97,13 @@ describe("Function Tests - NewTransition", function() {
     await tellor.connect(devWallet).transfer(accounts[1].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[1]).approve(oracle.address, BigInt(10E18))
     await oracle.connect(accounts[1]).depositStake(BigInt(10E18))
-    await oracle.connect(accounts[1]).submitValue(h.uintTob32(70), h.bytes(99), 0, '0x')
+    await oracle.connect(accounts[1]).submitValue(keccak256(h.uintTob32(70)), h.bytes(99), 0, h.uintTob32(70))
     blockyNew1 = await h.getBlock()
 
     await tellor.connect(devWallet).transfer(accounts[6].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[6]).approve(oracle.address, BigInt(10E18))
     await oracle.connect(accounts[6]).depositStake(BigInt(10E18))
-    await oracle.connect(accounts[6]).submitValue(h.uintTob32(70), h.bytes(100), 0, '0x')
+    await oracle.connect(accounts[6]).submitValue(keccak256(h.uintTob32(70)), h.bytes(100), 0, h.uintTob32(70))
     blockyNew2 = await h.getBlock()
 
     // submit 1 queryId=1 value to new flex (required for 360 init)
@@ -162,22 +163,22 @@ describe("Function Tests - NewTransition", function() {
     await tellor.connect(devWallet).init()
 
     // retrieve from new oracle
-    lastNewVal = await tellor.getLastNewValueById(70)
+    lastNewVal = await tellor.getLastNewValueById(keccak256(h.uintTob32(70)))
     expect(lastNewVal[0]).to.equal(100)
     expect(lastNewVal[1]).to.be.true
 
     // dispute last value
-    await oracle.connect(govSigner).removeValue(h.uintTob32(70), blockyNew2.timestamp)
+    await oracle.connect(govSigner).removeValue(keccak256(h.uintTob32(70)), blockyNew2.timestamp)
 
     // retrieve value
-    lastNewVal = await tellor.getLastNewValueById(70)
+    lastNewVal = await tellor.getLastNewValueById(keccak256(h.uintTob32(70)))
     expect(lastNewVal[0]).to.equal(99)
 
     // dispute first value
-    await oracle.connect(govSigner).removeValue(h.uintTob32(70), blockyNew1.timestamp)
+    await oracle.connect(govSigner).removeValue(keccak256(h.uintTob32(70)), blockyNew1.timestamp)
 
     // retrieve value
-    lastNewVal = await tellor.getLastNewValueById(70)
+    lastNewVal = await tellor.getLastNewValueById(keccak256(h.uintTob32(70)))
     expect(lastNewVal[0]).to.equal(0)
   })
 
@@ -205,25 +206,25 @@ describe("Function Tests - NewTransition", function() {
     await tellor.connect(devWallet).init()
 
     // retrieve from new oracle
-    newValCount = await tellor.getNewValueCountbyRequestId(70)
+    newValCount = await tellor.getNewValueCountbyRequestId(keccak256(h.uintTob32(70)))
     expect(newValCount).to.equal(2)
 
     // dispute last value
-    await oracle.connect(govSigner).removeValue(h.uintTob32(70), blockyNew2.timestamp)
+    await oracle.connect(govSigner).removeValue(keccak256(h.uintTob32(70)), blockyNew2.timestamp)
 
     // retrieve from new oracle
-    newValCount = await tellor.getNewValueCountbyRequestId(70)
+    newValCount = await tellor.getNewValueCountbyRequestId(keccak256(h.uintTob32(70)))
     expect(newValCount).to.equal(1)
 
     // dispute first value
-    await oracle.connect(govSigner).removeValue(h.uintTob32(70), blockyNew1.timestamp)
+    await oracle.connect(govSigner).removeValue(keccak256(h.uintTob32(70)), blockyNew1.timestamp)
     
     // retrieve from new oracle
-    newValCount = await tellor.getNewValueCountbyRequestId(70)
+    newValCount = await tellor.getNewValueCountbyRequestId(keccak256(h.uintTob32(70)))
     expect(newValCount).to.equal(0)
 
     // get value count for requestId with 0 values
-    newValCount = await tellor.getNewValueCountbyRequestId(71)
+    newValCount = await tellor.getNewValueCountbyRequestId(keccak256(h.uintTob32(71)))
     expect(newValCount).to.equal(0)
   })
 
@@ -236,7 +237,7 @@ describe("Function Tests - NewTransition", function() {
     await tellor.connect(devWallet).init()
 
     // retrieve from new oracle
-    timestampByIndex = await tellor.getTimestampbyRequestIDandIndex(70, 0)
+    timestampByIndex = await tellor.getTimestampbyRequestIDandIndex(keccak256(h.uintTob32(70)), 0)
     expect(timestampByIndex).to.equal(blockyNew1.timestamp)
   })
 
@@ -262,7 +263,7 @@ describe("Function Tests - NewTransition", function() {
     retrievedVal = await tellor["retrieveData(uint256,uint256)"](70, blockyOld1.timestamp);
     expect(retrievedVal).to.equal(200)
     await tellor.connect(devWallet).init()
-    retrievedVal = await tellor["retrieveData(uint256,uint256)"](70, blockyNew1.timestamp);
+    retrievedVal = await tellor["retrieveData(uint256,uint256)"](keccak256(h.uintTob32(70)), blockyNew1.timestamp);
     expect(retrievedVal).to.equal(99)
   })
 
