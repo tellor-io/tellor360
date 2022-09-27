@@ -55,7 +55,7 @@ contract Tellor360 is BaseToken, NewTransition {
         addresses[_ORACLE_CONTRACT] = _flexAddress; //used by Liquity+AMPL for this contract's reads
         //init minting uints (timestamps)
         uints[keccak256("_LAST_RELEASE_TIME_TEAM")] = block.timestamp;
-        uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp;
+        uints[keccak256("_LAST_RELEASE_TIME_DAO")] = block.timestamp - 12 weeks;
         // transfer dispute fees collected during transition period to team
         _doTransfer(
             addresses[_GOVERNANCE_CONTRACT],

@@ -167,7 +167,7 @@ describe("Function Tests - Tellor360", function() {
     expect(await tellor.getUintVar(h.hash("_INIT"))).to.equal(1)
     expect(await tellor.getAddressVars(h.hash("_ORACLE_CONTRACT"))).to.equal(oracle.address)
     expect(await tellor.getUintVar(h.hash("_LAST_RELEASE_TIME_TEAM"))).to.equal(blocky.timestamp)
-    expect(await tellor.getUintVar(h.hash("_LAST_RELEASE_TIME_DAO"))).to.equal(blocky.timestamp)
+    expect(await tellor.getUintVar(h.hash("_LAST_RELEASE_TIME_DAO"))).to.equal(blocky.timestamp - (86400 * 7 * 12))
 
     newDevWalletBal = await tellor.balanceOf(DEV_WALLET)
     expect(newDevWalletBal).to.equal(BigInt(oldDevWalletBal) + BigInt(oldGovBal))
@@ -222,15 +222,26 @@ describe("Function Tests - Tellor360", function() {
     //fast forward 12 hours
     h.advanceTime(60*60*12)
     await tellor.connect(devWallet).init()
+    blocky0 = await h.getBlock()
     //get _ORACLE_CONTRACT contract balance
     let oldBalance = BigInt(await tellor.balanceOf(oracle.address))
     //fast forward one day
     h.advanceTime(86399)
     //mint
     await tellor.mintToOracle()
-    //_ORACLE_CONTRACT balance should be greater by 131.5 tokens
+    blocky1 = await h.getBlock()
     let newBalance = BigInt(await tellor.balanceOf(oracle.address))
-    expect(newBalance).to.equal(oldBalance + BigInt(14694E16))
+    expectedBalance1 = oldBalance + (BigInt(web3.utils.toWei("146.94")) * BigInt(blocky1.timestamp - (blocky0.timestamp - (86400 * 7 * 12)))) / BigInt(86400)
+    expect(newBalance).to.equal(expectedBalance1)
+
+    await h.advanceTime(86400 * 7 * 12)
+
+    await tellor.mintToOracle()
+    blocky2 = await h.getBlock()
+
+    newBalance = BigInt(await tellor.balanceOf(oracle.address))
+    expectedBalance2 =  (BigInt(h.toWei("146.94")) * BigInt(blocky2.timestamp - blocky1.timestamp + 1)) / BigInt(86400)
+    expect(BigInt(newBalance) - BigInt(expectedBalance1)).to.equal(BigInt(expectedBalance2))
   });
 
   it("transferOutOfContract()", async function () {
