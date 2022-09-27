@@ -1,5 +1,14 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
+node_modules/
 artifacts/
+cache/
+package-lock.json
+
+# Config values
+.secret.json
+.env
+
+artifacts
 # compiled output
 /dist
 /tmp
