@@ -80,7 +80,7 @@ describe("Function Tests - Tellor360", function() {
     oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18), TRB_QUERY_ID)
     await oracle.deployed()
 
-    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
+    let governanceFactory = await ethers.getContractFactory("polygongovernance/contracts/Governance.sol:Governance")
     newGovernance = await governanceFactory.deploy(oracle.address, DEV_WALLET)
     await newGovernance.deployed()
 
@@ -289,7 +289,7 @@ describe("Function Tests - Tellor360", function() {
     await newOracle.deployed()
 
     // deploy new governance
-    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
+    let governanceFactory = await ethers.getContractFactory("polygongovernance/contracts/Governance.sol:Governance")
     newGovernance2 = await governanceFactory.deploy(oracle.address, DEV_WALLET)
     await newGovernance2.deployed()
 
