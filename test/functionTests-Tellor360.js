@@ -1,4 +1,3 @@
-const { AbiCoder } = require("@ethersproject/abi");
 const { expect } = require("chai");
 const h = require("./helpers/helpers");
 var assert = require('assert');
@@ -15,7 +14,11 @@ describe("Function Tests - Tellor360", function() {
   const REPORTER = "0x0D4F81320d36d7B7Cf5fE7d1D547f63EcBD1a3E0"
   const TELLORX_ORACLE = "0xe8218cACb0a5421BC6409e498d9f8CC8869945ea"
   const TRB_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000032"
-  const ETH_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000001"
+  const abiCoder = new ethers.utils.AbiCoder();
+  const keccak256 = web3.utils.keccak256;
+  const ETH_QUERY_DATA_ARGS = abiCoder.encode(["string", "string"], ["eth", "usd"]);
+  const ETH_QUERY_DATA = abiCoder.encode(["string", "bytes"], ["SpotPrice", ETH_QUERY_DATA_ARGS]);
+  const ETH_QUERY_ID = web3.utils.keccak256(ETH_QUERY_DATA);
 
 
   let accounts = null
@@ -27,7 +30,6 @@ describe("Function Tests - Tellor360", function() {
   let cfac,ofac,tfac,gfac,parachute,govBig,govTeam
   let govSigner = null
   let devWallet = null
-  let abiCoder = new ethers.utils.AbiCoder
 
   beforeEach("deploy and setup Tellor360", async function() {
 
@@ -78,7 +80,7 @@ describe("Function Tests - Tellor360", function() {
     oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18), TRB_QUERY_ID)
     await oracle.deployed()
 
-    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
+    let governanceFactory = await ethers.getContractFactory("polygongovernance/contracts/Governance.sol:Governance")
     newGovernance = await governanceFactory.deploy(oracle.address, DEV_WALLET)
     await newGovernance.deployed()
 
@@ -88,7 +90,6 @@ describe("Function Tests - Tellor360", function() {
     await tellor.connect(accounts[1]).approve(oracle.address, BigInt(10E18))
 
     await oracle.connect(accounts[1]).depositStake(BigInt(10E18))
-    // await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
 
     //tellorx staker
     await tellor.connect(devWallet).transfer(accounts[2].address, web3.utils.toWei("100"));
@@ -140,7 +141,7 @@ describe("Function Tests - Tellor360", function() {
     await tellor.connect(devWallet).transfer(accounts[1].address, web3.utils.toWei("100"));
     await tellor.connect(accounts[1]).approve(oracle.address, BigInt(10E18))
     await oracle.connect(accounts[1]).depositStake(BigInt(10E18))
-    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    await oracle.connect(accounts[1]).submitValue(ETH_QUERY_ID, h.bytes(100), 0, ETH_QUERY_DATA)
 
     //fast forward 12 hours
     h.advanceTime(60*60*12)
@@ -166,7 +167,7 @@ describe("Function Tests - Tellor360", function() {
     expect(await tellor.getUintVar(h.hash("_INIT"))).to.equal(1)
     expect(await tellor.getAddressVars(h.hash("_ORACLE_CONTRACT"))).to.equal(oracle.address)
     expect(await tellor.getUintVar(h.hash("_LAST_RELEASE_TIME_TEAM"))).to.equal(blocky.timestamp)
-    expect(await tellor.getUintVar(h.hash("_LAST_RELEASE_TIME_DAO"))).to.equal(blocky.timestamp)
+    expect(await tellor.getUintVar(h.hash("_LAST_RELEASE_TIME_DAO"))).to.equal(blocky.timestamp - (86400 * 7 * 12))
 
     newDevWalletBal = await tellor.balanceOf(DEV_WALLET)
     expect(newDevWalletBal).to.equal(BigInt(oldDevWalletBal) + BigInt(oldGovBal))
@@ -175,7 +176,7 @@ describe("Function Tests - Tellor360", function() {
 
   it("migrate()", async function() {
     // init 360
-    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    await oracle.connect(accounts[1]).submitValue(ETH_QUERY_ID, h.bytes(100), 0, ETH_QUERY_DATA)
    //fast forward 12 hours
     h.advanceTime(60*60*12)
     await tellor.connect(devWallet).init()
@@ -194,7 +195,7 @@ describe("Function Tests - Tellor360", function() {
   });
 
   it("mintToTeam()", async function () {
-    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    await oracle.connect(accounts[1]).submitValue(ETH_QUERY_ID, h.bytes(100), 0, ETH_QUERY_DATA)
     await h.expectThrow(tellor.mintToTeam()) // tellor360 not initiated
    //fast forward 12 hours
     h.advanceTime(60*60*12)
@@ -216,24 +217,35 @@ describe("Function Tests - Tellor360", function() {
   });
 
   it("mintToOracle()", async function () {
-    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    await oracle.connect(accounts[1]).submitValue(ETH_QUERY_ID, h.bytes(100), 0, ETH_QUERY_DATA)
     await h.expectThrow(tellor.mintToOracle()) // tellor360 not initiated
     //fast forward 12 hours
     h.advanceTime(60*60*12)
     await tellor.connect(devWallet).init()
+    blocky0 = await h.getBlock()
     //get _ORACLE_CONTRACT contract balance
     let oldBalance = BigInt(await tellor.balanceOf(oracle.address))
     //fast forward one day
     h.advanceTime(86399)
     //mint
     await tellor.mintToOracle()
-    //_ORACLE_CONTRACT balance should be greater by 131.5 tokens
+    blocky1 = await h.getBlock()
     let newBalance = BigInt(await tellor.balanceOf(oracle.address))
-    expect(newBalance).to.equal(oldBalance + BigInt(14694E16))
+    expectedBalance1 = oldBalance + (BigInt(web3.utils.toWei("146.94")) * BigInt(blocky1.timestamp - (blocky0.timestamp - (86400 * 7 * 12)))) / BigInt(86400)
+    expect(newBalance).to.equal(expectedBalance1)
+
+    await h.advanceTime(86400 * 7 * 12)
+
+    await tellor.mintToOracle()
+    blocky2 = await h.getBlock()
+
+    newBalance = BigInt(await tellor.balanceOf(oracle.address))
+    expectedBalance2 =  (BigInt(h.toWei("146.94")) * BigInt(blocky2.timestamp - blocky1.timestamp + 1)) / BigInt(86400)
+    expect(BigInt(newBalance) - BigInt(expectedBalance1)).to.equal(BigInt(expectedBalance2))
   });
 
   it("transferOutOfContract()", async function () {
-    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    await oracle.connect(accounts[1]).submitValue(ETH_QUERY_ID, h.bytes(100), 0, ETH_QUERY_DATA)
     await h.advanceTime(86400/2)
     await tellor.connect(devWallet).init()
 
@@ -267,7 +279,7 @@ describe("Function Tests - Tellor360", function() {
   });
 
   it("updateOracleAddress()", async function () {
-    await oracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    await oracle.connect(accounts[1]).submitValue(ETH_QUERY_ID, h.bytes(100), 0, ETH_QUERY_DATA)
     await h.advanceTime(86400/2)
     await tellor.connect(devWallet).init()
 
@@ -277,7 +289,7 @@ describe("Function Tests - Tellor360", function() {
     await newOracle.deployed()
 
     // deploy new governance
-    let governanceFactory = await ethers.getContractFactory("contracts/oldContracts/contracts/Governance360.sol:Governance")
+    let governanceFactory = await ethers.getContractFactory("polygongovernance/contracts/Governance.sol:Governance")
     newGovernance2 = await governanceFactory.deploy(oracle.address, DEV_WALLET)
     await newGovernance2.deployed()
 
@@ -317,7 +329,7 @@ describe("Function Tests - Tellor360", function() {
 
     await tellor.connect(accounts[1]).approve(newOracle.address, BigInt(10E18))
     await newOracle.connect(accounts[1]).depositStake(BigInt(10E18))
-    await newOracle.connect(accounts[1]).submitValue(h.uintTob32(1), h.bytes(100), 0, '0x')
+    await newOracle.connect(accounts[1]).submitValue(ETH_QUERY_ID, h.bytes(100), 0, ETH_QUERY_DATA)
 
     await h.expectThrow(tellor.updateOracleAddress()) // 1st new oracle value must be 12+ hours old
     

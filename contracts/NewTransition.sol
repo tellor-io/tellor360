@@ -82,9 +82,10 @@ contract NewTransition is TellorStorage, TellorVars {
         view
         returns (uint256)
     {
+        (bytes32 _queryId, ) = _getQueryIdAndDecimals(_requestId);
         IOracle _oracle = IOracle(addresses[_ORACLE_CONTRACT]);
         // try the new oracle first
-        try _oracle.getNewValueCountbyQueryId(bytes32(_requestId)) returns (
+        try _oracle.getNewValueCountbyQueryId(_queryId) returns (
             uint256 _valueCount
         ) {
             if (_valueCount == 0) {
@@ -92,22 +93,22 @@ contract NewTransition is TellorStorage, TellorVars {
             }
             // if last value is disputed, subtract 1 from the count until a non-disputed value is found
             uint256 _timestamp = _oracle.getTimestampbyQueryIdandIndex(
-                bytes32(_requestId),
+                _queryId,
                 _valueCount - 1
             );
             while (
-                _oracle.isInDispute(bytes32(_requestId), _timestamp) &&
+                _oracle.isInDispute(_queryId, _timestamp) &&
                 _valueCount > 1
             ) {
                 _valueCount--;
                 _timestamp = _oracle.getTimestampbyQueryIdandIndex(
-                    bytes32(_requestId),
+                    _queryId,
                     _valueCount - 1
                 );
             }
             if (
                 _valueCount == 1 &&
-                _oracle.isInDispute(bytes32(_requestId), _timestamp)
+                _oracle.isInDispute(_queryId, _timestamp)
             ) {
                 return 0;
             }
@@ -131,12 +132,16 @@ contract NewTransition is TellorStorage, TellorVars {
         view
         returns (uint256)
     {
+        (bytes32 _queryId, ) = _getQueryIdAndDecimals(_requestId);
         try
             IOracle(addresses[_ORACLE_CONTRACT]).getTimestampbyQueryIdandIndex(
-                bytes32(_requestId),
+                _queryId,
                 _index
             )
         returns (uint256 _val) {
+            if(_requestId == 1 && _val > block.timestamp - 15 minutes) {
+                ( , , _val) = IOracle(addresses[_ORACLE_CONTRACT]).getDataBefore(_queryId, block.timestamp - 15 minutes);
+            }
             return _val;
         } catch {
             return
@@ -178,19 +183,30 @@ contract NewTransition is TellorStorage, TellorVars {
         view
         returns (uint256)
     {
+        (bytes32 _queryId, uint256 _decimalsAdjustment) = _getQueryIdAndDecimals(
+            _requestId
+        );
         try
-            IOracle(addresses[_ORACLE_CONTRACT]).retrieveData(
+            IOracle(addresses[_ORACLE_CONTRACT]).getValueByTimestamp(
                 bytes32(_requestId),
                 _timestamp
             )
         returns (bytes memory _val) {
             return _sliceUint(_val);
         } catch {
-            bytes memory _val = IOracle(addresses[_ORACLE_CONTRACT])
-                .getValueByTimestamp(bytes32(_requestId), _timestamp);
-            return _sliceUint(_val);
+            bytes memory _val;
+            if (_requestId == 1) {
+                (, _val, ) = IOracle(addresses[_ORACLE_CONTRACT])
+                    .getDataBefore(_queryId, block.timestamp - 15 minutes);
+            } else {
+                 _val = IOracle(addresses[_ORACLE_CONTRACT])
+                .retrieveData(_queryId, _timestamp);
+            }
+            return (_sliceUint(_val) / (10**_decimalsAdjustment));
         }
     }
+
+
 
     // Internal functions
     /**
@@ -207,5 +223,24 @@ contract NewTransition is TellorStorage, TellorVars {
             _number = _number * 2**8;
             _number = _number + uint8(_b[_i]);
         }
+    }
+
+    function _getQueryIdAndDecimals(uint256 _requestId) internal pure returns (bytes32, uint256) {
+        bytes32 _queryId;
+        uint256 _decimalsAdjustment;
+        if(_requestId == 1) {
+            _queryId = 0x83a7f3d48786ac2667503a61e8c415438ed2922eb86a2906e4ee66d9a2ce4992; // SpotPrice(eth, usd)
+            _decimalsAdjustment = 12;
+        } else if(_requestId == 10) {
+            _queryId = 0x0d12ad49193163bbbeff4e6db8294ced23ff8605359fd666799d4e25a3aa0e3a; // AmpleforthCustomSpotPrice(0x)
+            _decimalsAdjustment = 0;
+        } else if(_requestId == 41) {
+            _queryId = 0x612ec1d9cee860bb87deb6370ed0ae43345c9302c085c1dfc4c207cbec2970d7; // AmpleforthUSPCE(0x)
+            _decimalsAdjustment = 0;
+        } else {
+            _queryId = bytes32(_requestId);
+            _decimalsAdjustment = 0;
+        }
+        return(_queryId, _decimalsAdjustment);
     }
 }
