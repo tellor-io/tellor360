@@ -19,6 +19,7 @@ describe("End-to-End Tests - One", function() {
     const TELLOR_PROVIDER_AMPL = "0xf5b7562791114fB1A8838A9E8025de4b7627Aa79"
     const MEDIAN_ORACLE_AMPL = "0x99C9775E076FDF99388C029550155032Ba2d8914"
     const TRB_QUERY_ID = "0x0000000000000000000000000000000000000000000000000000000000000032"
+    const MINIMUM_STAKE_AMOUNT = web3.utils.toWei("10")
     const keccak256 = web3.utils.keccak256;
     const abiCoder = new ethers.utils.AbiCoder();
     const ETH_QUERY_DATA_ARGS = abiCoder.encode(["string", "string"], ["eth", "usd"]);
@@ -83,7 +84,7 @@ describe("End-to-End Tests - One", function() {
     parachute = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor",PARACHUTE, devWallet);
   
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
-    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18), TRB_QUERY_ID)
+    oracle = await oracleFactory.deploy(tellorMaster, 12*60*60, BigInt(100E18), BigInt(10E18), MINIMUM_STAKE_AMOUNT, TRB_QUERY_ID)
     await oracle.deployed()
 
     let governanceFactory = await ethers.getContractFactory("polygongovernance/contracts/Governance.sol:Governance")
