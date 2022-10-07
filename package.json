@@ -39,7 +39,7 @@
     "polygongovernance": "github:tellor-io/governance#360",
     "solidity-coverage": "^0.7.17",
     "tellorflex": "github:tellor-io/tellorFlex#360",
-    "usingtellor": "github:tellor-io/usingtellor#360audit",
+    "usingtellor": "github:tellor-io/usingtellor#360",
     "web3": "^1.5.1"
   }
 }
