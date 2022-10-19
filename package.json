@@ -36,10 +36,10 @@
     "@nomiclabs/hardhat-etherscan": "^2.1.5",
     "dotenv": "^10.0.0",
     "hardhat-contract-sizer": "^2.0.3",
-    "polygongovernance": "github:tellor-io/governance#360",
+    "polygongovernance": "github:tellor-io/governance",
     "solidity-coverage": "^0.7.17",
-    "tellorflex": "github:tellor-io/tellorFlex#360",
-    "usingtellor": "github:tellor-io/usingtellor#360audit",
+    "tellorflex": "github:tellor-io/tellorFlex",
+    "usingtellor": "^5.0.0",
     "web3": "^1.5.1"
   }
 }
