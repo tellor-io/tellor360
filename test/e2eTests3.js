@@ -58,25 +58,38 @@ describe("End-to-End Tests - Three", function() {
           },},],
       });
 
+    await new Promise(r => setTimeout(r, 1000));
+
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [BIGWALLET]}
     )
+
+    await new Promise(r => setTimeout(r, 1000));
+
 
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [PARACHUTE]}
     )
 
+    await new Promise(r => setTimeout(r, 1000));
+
+
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [DEV_WALLET]
     })
 
+    await new Promise(r => setTimeout(r, 2000));
+
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [REPORTER]
     })
+
+    await new Promise(r => setTimeout(r, 2000));
+
 
     //account forks
     accounts = await ethers.getSigners()
@@ -89,7 +102,9 @@ describe("End-to-End Tests - Three", function() {
     governanceOld = await ethers.getContractAt("polygongovernance/contracts/Governance.sol:Governance", GOVERNANCE_OLD)
     oracleOld = await ethers.getContractAt("TellorFlex", TELLOR_ORACLE_OLD)
     parachute = await ethers.getContractAt("contracts/oldContracts/contracts/interfaces/ITellor.sol:ITellor",PARACHUTE, devWallet);
-  
+    
+    await new Promise(r => setTimeout(r, 2000));
+
     // deploy new contracts
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
     oracle = await oracleFactory.deploy(tellorMaster, REPORTING_LOCK, STAKE_AMOUNT_DOLLAR_TARGET, h.toWei("15"), MINIMUM_STAKE_AMOUNT, TRB_QUERY_ID)
@@ -112,18 +127,22 @@ describe("End-to-End Tests - Three", function() {
     await tellor.connect(devWallet).transfer(accounts[1].address, web3.utils.toWei("200"));
     await new Promise(r => setTimeout(r, 1000));
     await tellor.connect(accounts[1]).approve(oracle.address, h.toWei("200"))
+    await new Promise(r => setTimeout(r, 2000));
     await oracle.connect(accounts[1]).depositStake(h.toWei("200"))
     await new Promise(r => setTimeout(r, 1000));
     await oracle.connect(accounts[1]).submitValue(ETH_QUERY_ID, h.uintTob32(h.toWei("100")), 0, ETH_QUERY_DATA)
+    await new Promise(r => setTimeout(r, 2000));
 
     // submit new oracle address to old oracle
     await tellor.connect(devWallet).transfer(accounts[2].address, h.toWei("200"));
+    await new Promise(r => setTimeout(r, 2000));
     await tellor.connect(accounts[2]).approve(oracleOld.address, h.toWei("200"))
     await new Promise(r => setTimeout(r, 1000));
     await oracleOld.connect(accounts[2]).depositStake(h.toWei("200"))
+    await new Promise(r => setTimeout(r, 2000));
     newOracleAddressEncoded = abiCoder.encode(["address"], [oracle.address])
     await oracleOld.connect(accounts[2]).submitValue(TELLOR_ORACLE_ADDRESS_QUERY_ID, newOracleAddressEncoded, 0, TELLOR_ORACLE_ADDRESS_QUERY_DATA)
-
+    await new Promise(r => setTimeout(r, 2000));
     await h.advanceTime(86400 / 2)
 
     await tellor.updateOracleAddress()
