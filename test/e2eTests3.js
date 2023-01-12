@@ -94,22 +94,32 @@ describe("End-to-End Tests - Three", function() {
     let oracleFactory = await ethers.getContractFactory("TellorFlex")
     oracle = await oracleFactory.deploy(tellorMaster, REPORTING_LOCK, STAKE_AMOUNT_DOLLAR_TARGET, h.toWei("15"), MINIMUM_STAKE_AMOUNT, TRB_QUERY_ID)
     await oracle.deployed()
+    await new Promise(r => setTimeout(r, 1000));
 
     let governanceFactory = await ethers.getContractFactory("polygongovernance/contracts/Governance.sol:Governance")
     governance = await governanceFactory.deploy(oracle.address, DEV_WALLET)
     await governance.deployed()
 
+    // sleep 1 second for api rate limit
+    await new Promise(r => setTimeout(r, 1000));
+
     await oracle.init(governance.address)
+
+    // sleep 1 second for api rate limit
+    await new Promise(r => setTimeout(r, 1000));
 
     // submit eth price to new oracle
     await tellor.connect(devWallet).transfer(accounts[1].address, web3.utils.toWei("200"));
+    await new Promise(r => setTimeout(r, 1000));
     await tellor.connect(accounts[1]).approve(oracle.address, h.toWei("200"))
     await oracle.connect(accounts[1]).depositStake(h.toWei("200"))
+    await new Promise(r => setTimeout(r, 1000));
     await oracle.connect(accounts[1]).submitValue(ETH_QUERY_ID, h.uintTob32(h.toWei("100")), 0, ETH_QUERY_DATA)
 
     // submit new oracle address to old oracle
     await tellor.connect(devWallet).transfer(accounts[2].address, h.toWei("200"));
     await tellor.connect(accounts[2]).approve(oracleOld.address, h.toWei("200"))
+    await new Promise(r => setTimeout(r, 1000));
     await oracleOld.connect(accounts[2]).depositStake(h.toWei("200"))
     newOracleAddressEncoded = abiCoder.encode(["address"], [oracle.address])
     await oracleOld.connect(accounts[2]).submitValue(TELLOR_ORACLE_ADDRESS_QUERY_ID, newOracleAddressEncoded, 0, TELLOR_ORACLE_ADDRESS_QUERY_DATA)
@@ -117,6 +127,7 @@ describe("End-to-End Tests - Three", function() {
     await h.advanceTime(86400 / 2)
 
     await tellor.updateOracleAddress()
+    await new Promise(r => setTimeout(r, 1000));
 
     await h.advanceTime(86400 * 7)
 
