@@ -134,6 +134,8 @@ describe("End-to-End Tests - Two", function() {
     await h.advanceTime(86400 * 2.5)
     await governance.executeVote(voteCount)
 
+    // sleep 1 second for api rate limit
+    await new Promise(r => setTimeout(r, 1000));
   })
 
   it("values can be retrieved through whole transition period", async function () {

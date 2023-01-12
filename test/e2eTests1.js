@@ -132,6 +132,9 @@ describe("End-to-End Tests - One", function() {
     await h.advanceTime(86400 * 8)
     await governance.tallyVotes(voteCount)
     await h.advanceTime(86400 * 2.5)
+    
+    // sleep 1 second for api rate limit
+    await new Promise(r => setTimeout(r, 1000));
   });
 
   it("Mine 2 values on 50 different ID's", async function () {

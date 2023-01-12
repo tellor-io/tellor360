@@ -121,6 +121,9 @@ describe("End-to-End Tests - Three", function() {
     await h.advanceTime(86400 * 7)
 
     await tellor.updateOracleAddress()
+
+    // sleep 1 second for api rate limit
+    await new Promise(r => setTimeout(r, 1000));
   });
 
   it("ensure oracle address updated", async function() {

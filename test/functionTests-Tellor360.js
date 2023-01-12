@@ -124,6 +124,9 @@ describe("Function Tests - Tellor360", function() {
     await governance.tallyVotes(voteCount)
     await h.advanceTime(86400 * 2.5)
     await governance.executeVote(voteCount)
+
+    // sleep 1 second for api rate limit
+    await new Promise(r => setTimeout(r, 1000));
   });
 
   it("constructor()", async function() {
