@@ -124,6 +124,9 @@ describe("Parachute Tests", function() {
     await h.advanceTime(86400 * 8)
     await governance.tallyVotes(voteCount)
     await h.advanceTime(86400 * 2.5)
+
+    // sleep 1 second for api rate limit
+    await new Promise(r => setTimeout(r, 1000));
   });
 
   it("rescueFailedUpdate", async function () {

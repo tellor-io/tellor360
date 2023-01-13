@@ -143,6 +143,9 @@ describe("Function Tests - NewTransition", function() {
     await h.advanceTime(86400 * 2.5)
     totalSupply = await tellor.totalSupply()
     await governance.executeVote(voteCount)
+
+    // sleep 1 second for api rate limit
+    await new Promise(r => setTimeout(r, 1000));
   });
 
   it("decimals()", async function () {
